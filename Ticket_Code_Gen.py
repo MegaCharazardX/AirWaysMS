@@ -39,5 +39,15 @@ def Gen_Code():
 
     ticket_code = corrected_date_ + rand_code
     return ticket_code
+
+def return_date_time(millisecond = False):
+    if millisecond == True :
+        now_time = str(datetime. now())
+        return now_time
+    else:
+        now_time = str(datetime. now()).split(".")
+        return now_time[0]
     
 print(Gen_Code())
+print( return_date_time())
+
