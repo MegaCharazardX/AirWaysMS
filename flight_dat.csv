@@ -1,0 +1,2 @@
+FlightID,FlightNumber,DepartureDateTime,ArrivalDateTime,OriginAirportCode,DestinationAirportCode,AvailableSeats
+1,123,"2024-09-15 08:40:08","2024-09-17 08:40:08",1,2,200
