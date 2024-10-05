@@ -32,13 +32,17 @@ Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height, border_width=2
 lbl = CTkLabel(Main_fame, text= "Book A Flight :- ", font = ("Freestyle Script", 18), bg_color="transparent", text_color= glb_clr_2)\
     .place(x = 10, y = 10)
 
+def Func_radio_btn():
+    print(book_a_fligt_radio_val.get())
+
 book_a_fligt_radio_val = StringVar(value = "other")
+print(book_a_fligt_radio_val.get())
 rd_btn_y_pos = 40
-return_radio_btn = createRadioButton(Main_fame,"Return","return_radio",book_a_fligt_radio_val,None,10, rd_btn_y_pos)#. place(x = 10, y = 25)
+return_radio_btn = createRadioButton(Main_fame,"Return","ReturnRadio",book_a_fligt_radio_val,Func_radio_btn,10, rd_btn_y_pos)#. place(x = 10, y = 25)
     
-one_way_radio_btn = createRadioButton(Main_fame,"One Way", "oneway_radio", book_a_fligt_radio_val,None, 85, rd_btn_y_pos)#. place(x = 50, y = 25)
+one_way_radio_btn = createRadioButton(Main_fame,"One Way", "OnewayRadio", book_a_fligt_radio_val,Func_radio_btn, 85, rd_btn_y_pos)#. place(x = 50, y = 25)
     
-mulicity_radio_btn = createRadioButton(Main_fame, "Multicity", "multicity_radio", book_a_fligt_radio_val,None, 180, rd_btn_y_pos)#. place(x = 90, y = 25)
+mulicity_radio_btn = createRadioButton(Main_fame, "Multicity", "MulticityRadio", book_a_fligt_radio_val,Func_radio_btn, 180, rd_btn_y_pos)#. place(x = 90, y = 25)
 
 Origin_Airport = CTkComboBox(Main_fame,width=250, values=["From"]).place (x = 10, y = rd_btn_y_pos+30)
 Dest_Airport = CTkComboBox(Main_fame,width=250, values=["To"]).place (x = 10, y = rd_btn_y_pos+59)
