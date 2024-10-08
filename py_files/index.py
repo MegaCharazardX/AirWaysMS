@@ -43,15 +43,42 @@ def on_search_fligh_click():
     for i in div_frame.winfo_children():
         i.destroy()
     div_frame.destroy()
+    
+    
     fligt_search_result_frm = CTkScrollableFrame (Main_fame, width=900, height = 550)
     fligt_search_result_frm.place(x = 216, y = 75)
-    dummybtn = CTkButton(Main_fame,)
-    dummybtn.place(x =10, y = 10)
-    dummy_back_btn = CTkButton(Main_fame,text="Back")
-    dummy_back_btn.place(x =10, y = 10)
 
+    
+    def go_back():
+        for i in fligt_search_result_frm.winfo_children():
+            i.destroy()
+        fligt_search_result_frm.destroy()
+        Get_Flight_Details()
+        
+    dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
+    dummy_back_btn.place(x =10, y = 10)
+    
+    btns = []
+
+    btn_data= {
+        1:"F1",
+        2:"F2",
+        3:"F3",
+        4:"F4",
+        5:"F5"
+    }
+
+    def on_btn_click(index):
+        print(f"{index} clicked. ")
+        
+    for id, label in btn_data.items() :
+        
+        btn = CTkButton(fligt_search_result_frm, text = label, command = lambda id=id: on_btn_click(id)).pack(pady = 10)
+        btns.append(btn)
+        
 # =>1-----Get Flight details---------------------------------------------------------------------   
 
+global  Get_Flight_Details
 def Get_Flight_Details():
     global div_frame
     div_frame = CTkFrame(Main_fame,width=500, height = 300)

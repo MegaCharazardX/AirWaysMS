@@ -14,9 +14,6 @@ from customtkinter import *
 root = CTk()
 btns = []
 
-def on_btn_click(index):
-    print(f"{label} clicked. ")
-
 btn_data= {
     1:"Start",
     2:"Stop",
@@ -25,9 +22,13 @@ btn_data= {
     5:"Resume"
 }
 
+
+def on_btn_click(index):
+    print(f"{index} clicked. ")
+    
 for id, label in btn_data.items() :
     
-    btn = CTkButton(root, text = label, command = lambda id=id: on_btn_click(label)).pack(pady = 10)
+    btn = CTkButton(root, text = label, command = lambda id=id: on_btn_click(id)).pack(pady = 10)
     btns.append(btn)
 
 root.mainloop()
