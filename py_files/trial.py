@@ -62,3 +62,28 @@ root.mainloop()
 #     'U_DOB' varchar(100),
 #     'U_Age' int(4),
 #     );
+
+import customtkinter as ctk
+
+# Create the main window
+root = ctk.CTk()
+
+# Function to toggle password visibility
+def toggle_password():
+    if entry.cget('show') == '*':
+        entry.configure(show='')  # Show the password
+        toggle_btn.configure(text="Hide Password")
+    else:
+        entry.configure(show='*')  # Hide the password
+        toggle_btn.configure(text="Show Password")
+
+# Create a password entry
+entry = ctk.CTkEntry(root, show='*', placeholder_text="Enter your password")
+entry.pack(pady=10)
+
+# Create a toggle button to show/hide the password
+toggle_btn = ctk.CTkButton(root, text="Show Password", command=toggle_password)
+toggle_btn.pack(pady=10)
+
+# Start the main loop
+root.mainloop()

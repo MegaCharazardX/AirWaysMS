@@ -36,11 +36,9 @@ def createRadioButton (_frame ,_text : str , _value, _variable, _command,  _xpos
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= glb_clr_1, fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
 
-def Show_pass(_widget):
-    _widget.bind("<ButtonPress>", lambda event, :_widget.configure(show = ""))
 
 #=> --------Sign Up --------------------
-def on_lbl_click() :
+def PG_Sign_Up() :
     #print("Hi")
     root.title ("http:www.HADAirlineManagementSystem.com/SignUp")
     for i in Main_fame.winfo_children():
@@ -74,15 +72,26 @@ def on_lbl_click() :
     U_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Username")
     U_name_Entry.place(x = 25, y = 90)
     
+    
+    def Show_pass(_widget, btn):
+        if _widget.cget('show') == '*':
+            _widget.configure(show='')  # Show the password
+            btn.configure(text="Hide")
+        else:
+            _widget.configure(show='*')  # Hide the password
+            btn.configure(text="Show")
+    
     pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
-    show_btn = CTkButton(pass_Entry, width = 22, height=28, text="",border_color="#565b5e",border_width=2, fg_color="transparent")
-    show_btn.place(x = 328, y=0)
+    show_btn = CTkButton(pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=lambda event, btn: show_btn(Show_pass(pass_Entry,btn)))
+    show_btn.place(x = 304, y=0)
     pass_Entry.place(x = 25, y = 130)
     
     re_pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Re-Password")
-    show_btn = CTkButton(re_pass_Entry, width = 22, height=28, text="",border_color="#565b5e",border_width=2, fg_color="transparent", command=lambda :(Show_pass()))
-    show_btn.place(x = 328, y=0)
+    re_show_btn = CTkButton(re_pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=lambda btn: re_show_btn(Show_pass(re_pass_Entry,re_show_btn)))
+    re_show_btn.place(x = 304, y=0)
     re_pass_Entry.place(x = 25, y = 170)
+    
+    
 #=>3------Sign In Page --------------------------------------
 global PG_Sign_in
 def PG_Sign_in():
@@ -130,7 +139,7 @@ def PG_Sign_in():
     Sign_up_lbl.place(x = 215, y = 170)
     
     
-    Sign_up_lbl.bind("<Button-1>", lambda event, : on_lbl_click())
+    Sign_up_lbl.bind("<Button-1>", lambda event, : PG_Sign_Up())
     Sign_up_lbl.bind("<Enter>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "#007acc"))
     Sign_up_lbl.bind("<Leave>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "Light Gray"))
 
