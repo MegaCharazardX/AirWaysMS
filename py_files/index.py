@@ -1,11 +1,39 @@
+import subprocess
+import smtplib
+import os
+import sys
+# KU
+
+# def install(package):
+#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# # List of required packages
+# required_packages = ["customtkinter", 
+#                      "matplotlib", 
+#                      "pillow",
+#                      "pymysql",
+#                      "colorama",
+#                      "tkcalendar"
+#                     ]
+
+# # Install missing packages
+# for package in required_packages:
+#     try:
+#         __import__(package)
+#         print(f"{package} Succesfully installed.")
+#     except ImportError:
+#         install(package)
+
 from customtkinter import *
 from PIL import Image
-import os 
 from subprocess import call
 import Global_Config as GC
 import pymysql
+from tkcalendar import Calendar
 import tkinter as tk 
 from Usable_screen import ScreenGeometry as SG
+from tkcalendar import Calendar
+from tkinter import Toplevel
 from colorama import Fore
 
 m_r_width, m_r_height = SG().GetUsableScreenSize()[0], SG().GetUsableScreenSize()[1]
@@ -19,9 +47,18 @@ root.state("zoomed")
 root.minsize(m_r_width, m_r_height)
 root.geometry(f"{m_r_width}x{m_r_height}")
 
+con = pymysql.connect(
+    host = "localhost",
+    user = "root",
+    passwd  = "*password*11",
+    database = "airwaysms2_0"
+                    )
+
+cur = con.cursor()
 #---------GLOBAL VARIABLES --------
+global prev_page, _isSignedIn, User
 _isSignedIn = False
-global prev_page
+User = ""
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
@@ -34,6 +71,12 @@ def createRadioButton (_frame ,_text : str , _value, _variable, _command,  _xpos
     tmpRdBtn.place(x =_xpos, y = _ypos)
     return tmpRdBtn
 
+def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "italic", "bold"), _textcolor = "red", _x = 10, _y = 10, _cooldowntime = 3000):
+    error_label = CTkLabel(_Master, text = _text, font = _font, text_color = _textcolor)
+    error_label.place(x = _x, y = _y)
+    def refresh():
+        error_label.destroy()
+    error_label.after(_cooldowntime, refresh)
 #------------------------------------------------------
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= glb_clr_1, fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
@@ -156,42 +199,70 @@ def PG_Sign_in():
     login_lb = CTkLabel(form_frm, text = "LOGIN")
     login_lb.place(x = 10, y = 10)
     
-    user_Entry = CTkEntry(form_frm, width = 350, placeholder_text= "Username")
+    def Login_authentication(_username, _pass):
+        global _isSignedIn, User
+        _username= "vs_hari_dhejus" #_username.get()
+        _pass = "Charazard101"#_pass.get()
+        if (_username == "" or _pass == "" ) :
+            errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
+        else:
+            temp_qry = f"SELECT U_name, U_Gmail, U_password FROM user_acc WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
+            cur.execute(temp_qry)
+            qry_result = cur.fetchone()
+            print(qry_result)
+            
+            if qry_result == None :
+                errorLabeling(form_frm, "Username Or Password Is Incorrect", _x = 50, _y = 150)
+                
+            else: 
+                User = qry_result[0]
+                print(User)
+                _isSignedIn = True
+                PG_Get_Flight_Details()
+    
+    user_Entry = CTkEntry(form_frm, width = 350, placeholder_text= "Username/Gmail")
     user_Entry.place(x = 25, y = 40)
     
-    password_Entry = CTkEntry(form_frm, width = 350, placeholder_text= "Password")
-    password_Entry.place(x = 25, y = 80)
+    def Show_pass():
+        
+        if pass_Entry.cget('show') == '*':
+            pass_Entry.configure(show='')  # Show the password
+            show_btn.configure(text=" Hide ")
+        else:
+            pass_Entry.configure(show='*')  # Hide the password
+            show_btn.configure(text="Show")
+            
+    pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
+    show_btn = CTkButton(pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=Show_pass)
+    show_btn.place(x = 304, y=0)
+    pass_Entry.place(x = 25, y = 80)
     
-    def Login_authentication():
-        _isSignedIn = True
-        print("Signed In")
-        if prev_page ==1:
-            PG_Get_Flight_Details()
-        elif prev_page == 2:
-            PG_search_flight_()
-    
-    Login_btn = CTkButton(form_frm, text= "LOGIN", width= 350, corner_radius=100, command=Login_authentication)
+    Login_btn = CTkButton(form_frm, text= "LOGIN", width= 350, corner_radius=100, command=lambda :(Login_authentication(user_Entry, pass_Entry)))
     Login_btn.place(x = 25, y = 120)
     
     No_of_hyphen = 41
     line_lbl = CTkLabel(form_frm, text = f"{'-'*No_of_hyphen} OR {'-'*No_of_hyphen}")
-    line_lbl.place(x = 25, y = 150)
+    line_lbl.place(x = 25, y = 170)
     
-    Gmail_Entry = CTkEntry(form_frm, width = 350, placeholder_text= "Gmail")
-    Gmail_Entry.place(x = 25, y = 180)
+    def loginWithGoogle():
+        temp_TL = CTkToplevel(root)
+        temp_TL.title("http:www.HADAirlineManagementSystem.com/Error?loginWithGoogle")
+        temp_TL.attributes("-topmost", True)
+        temp_TL.geometry("400x300")
+        errorLabeling(temp_TL, _text="""
+We are Extremly Sorry for the Inconvenience: 
+We at HAD are currently working to 
+bring in that feature.""",_textcolor = "#007acc", _cooldowntime = None)
     
-    password_Entry2 = CTkEntry(form_frm, width = 350, placeholder_text= "Password")
-    password_Entry2.place(x = 25, y =220)
+    Login_btn2 = CTkButton(form_frm, text= "LOGIN with Google", width= 350, corner_radius=100, command=loginWithGoogle)
+    Login_btn2.place(x = 25, y = 220)
     
-    Login_btn2 = CTkButton(form_frm, text= "LOGIN", width= 350, corner_radius=100, command=Login_authentication)
-    Login_btn2.place(x = 25, y = 260)
-    
-
     tempxpos = 100
+    tempypos = 270
     Dnt_hv_acc_lbl = CTkLabel(form_frm, text="Don't have an account ? ")
-    Dnt_hv_acc_lbl.place(x = tempxpos, y = 300)
+    Dnt_hv_acc_lbl.place(x = tempxpos, y = tempypos)
     Sign_up_lbl = CTkLabel(form_frm, text="Sign Up", font = ("Arial" , 12, "italic", "underline"))
-    Sign_up_lbl.place(x = tempxpos + 140, y = 300)
+    Sign_up_lbl.place(x = tempxpos + 140, y = tempypos)
     
     
     Sign_up_lbl.bind("<Button-1>", lambda event, : PG_Sign_Up())
@@ -222,7 +293,6 @@ def PG_search_flight_():
     def go_back():
         for i in Main_fame.winfo_children():
             i.destroy()
-        #fligt_search_result_frm.destroy()
         Main_frm_Authentication_Btns()
         PG_Get_Flight_Details()
         
@@ -255,7 +325,7 @@ def PG_search_flight_():
 # =>1-----Get Flight details---------------------------------------------------------------------   
 
 def PG_Get_Flight_Details():
-    global div_frame    
+    global div_frame, _isSignedIn, User    
     for i in Main_fame.winfo_children():
         i.destroy()
         
@@ -267,20 +337,14 @@ def PG_Get_Flight_Details():
     div_frm_xpos = 75
     din_frm_widget_width = 350
     div_frame.place(x = ((m_r_width/2)-(temp_frm_width/2)), y = ((m_r_height/2)- (temp_frm_height/2)))
-    
-    def Combo_get_origin_val(origin_combo_value):
-        origin_airport = origin_combo_value
-        
-    def Combo_get_dest_val(dest_combo_value):
-        dest_airport = dest_combo_value
-        #print(dest_airport)
-
 
     def Func_radio_btn():
-        print(book_a_fligt_radio_val.get())
+        global radio_val
+        radio_val = book_a_fligt_radio_val.get()
+        print(radio_val)
 
+    global book_a_fligt_radio_val
     book_a_fligt_radio_val = StringVar(value = "other")
-    print(book_a_fligt_radio_val.get())
     rd_btn_y_pos = 20
     return_radio_btn = createRadioButton(div_frame,"Return","ReturnRadio",book_a_fligt_radio_val,Func_radio_btn,div_frm_xpos, rd_btn_y_pos)#. place(x = 10, y = 25)
         
@@ -288,58 +352,104 @@ def PG_Get_Flight_Details():
         
     #mulicity_radio_btn = createRadioButton(div_frame, "Multicity", "MulticityRadio", book_a_fligt_radio_val,Func_radio_btn, div_frm_xpos+270, rd_btn_y_pos)#. place(x = 90, y = 25)
 
+    
+    def Combo_get_origin_val(origin_combo_value):
+        global origin_airport
+        origin_airport = origin_combo_value
+        print(origin_airport)
+        
     departure_place = StringVar(value="dep_combo_other")
     departure_place.set("Departure")
-
+    
     Origin_Airport = CTkComboBox(div_frame,width=din_frm_widget_width,
                                 values= [
                                     "Boston",
                                     "Chennai",
                                     "Thiruvananthapuram"
                                     ],
-                                    variable= departure_place, command = Combo_get_origin_val).place (x = div_frm_xpos, y = rd_btn_y_pos+50)
+                                    variable= departure_place, command = Combo_get_origin_val)
+    Origin_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+50)
 
-    departure_place = Origin_Airport
+    
+    def Combo_get_dest_val(dest_combo_value):
+        global dest_airport
+        dest_airport = dest_combo_value
+        print(dest_airport)
 
+    global arrival_place 
     arrival_place = StringVar(value="des_combo_other")
+    arrival_place.set("Destination")
     Dest_Airport = CTkComboBox(div_frame,width=din_frm_widget_width, 
                             values=[
                                     "Boston",
                                     "Chennai",
                                     "Thiruvananthapuram"
                                 ],
-                            variable= arrival_place, command= Combo_get_dest_val).place (x = div_frm_xpos, y = rd_btn_y_pos+79)
+                            variable= arrival_place, command= Combo_get_dest_val)
+    Dest_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+82)
 
-    arrival_place.set("Destination")
     arrival_place = arrival_place.get()
 
 
-    passenger_Class = CTkComboBox(div_frame,width=din_frm_widget_width, values=["Passenger/Class"]).place (x = div_frm_xpos, y = rd_btn_y_pos+114)
+    passenger_Class = CTkComboBox(div_frame,width=din_frm_widget_width, values=["Passenger/Class"])
+    passenger_Class.place (x = div_frm_xpos, y = rd_btn_y_pos+114)
 
+    
+    def open_date_picker():
+        
+        top = CTkToplevel(root)
+        top.title("Select a Date")
+        top.attributes("-topmost", True)
+        cal = Calendar(top, selectmode='day', year=2024, month=10, day=6)
+        cal.pack(pady=10)
+        def select_date():
+            selected_date = cal.get_date()
+            Dept_date_label.configure(text=f"Selected Date: {selected_date}")
+            top.destroy()
+            
+        select_button = CTkButton(top, text="Select Date", command=select_date)
+        select_button.pack(pady=10)
+
+    
+    Dept_Date_Btn = CTkButton(div_frame, text="Departure Date", command=open_date_picker, corner_radius=100)
+    Dept_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+154)
+
+    Dept_date_label = CTkLabel(div_frame, text= "Select Date")
+    Dept_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+154)
+    
     def Null_Check():
-        arrival_place = arrival_place.get()
-        departure_place = departure_place.get()
-        radio_val = book_a_fligt_radio_val.get()
-        if arrival_place  or departure_place or radio_val == "other":
-            error_label = CTkLabel(div_frame, text = "Feilds Cannot Be Empty", font = ("Bradley Hand ITC" , 15, "italic", "bold"), text_color = "red")
-            error_label.place(x = 75, y = 170)
+        error_name = ""
+        try :
+            if dest_airport not in globals() or origin_airport not in globals() or radio_val not in globals():
+                pass
+            
+        except NameError :
+            error_name = "NameError"
+            error_label = CTkLabel(div_frame, text = "Feilds Cannot Be Empty", font = ("Bradley Hand ITC" , 18, "italic", "bold"), text_color = "red")
+            error_label.place(x = 140, y = 220)
             def refresh():
                 error_label.destroy()
             error_label.after(3000, refresh)
-        
-    #Date = CT
-    Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check())).place(x = div_frm_xpos, y =185)
+            
+        finally:
+            if error_name != "NameError":
+                PG_search_flight_()
+                
+    Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check()))
+    Search_Fligths_btn.place(x = div_frm_xpos, y =225)
     Main_frm_Authentication_Btns()
     
 global Main_frm_Authentication_Btns
 def Main_frm_Authentication_Btns():
-        
-    temp_xpos = 300
-    Sign_in_btn = CTkButton(Main_fame, text = "Sign In", command= PG_Sign_in)
-    Sign_in_btn.place(x = temp_xpos, y = 10)
+    if _isSignedIn == True:
+        errorLabeling(Main_fame, f"{User}", _textcolor = "#007acc", _x = m_r_width-200, _y= 10,_cooldowntime = None)
+    else:
+        temp_xpos = m_r_width-300
+        Sign_in_btn = CTkButton(Main_fame, text = "Sign In", command= PG_Sign_in)
+        Sign_in_btn.place(x = temp_xpos, y = 10)
 
-    Sign_up_btn = CTkButton(Main_fame, text = "Sign Up", fg_color="transparent", border_color= "grey", border_width=2, command=PG_Sign_Up)
-    Sign_up_btn.place(x = temp_xpos+150, y = 10)
+        Sign_up_btn = CTkButton(Main_fame, text = "Sign Up", fg_color="transparent", border_color= "grey", border_width=2, command=PG_Sign_Up)
+        Sign_up_btn.place(x = temp_xpos+150, y = 10)
 
 Main_frm_Authentication_Btns()
 
