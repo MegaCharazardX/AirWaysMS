@@ -3,7 +3,7 @@ from tkcalendar import Calendar
 from tkinter import Toplevel
 import subprocess
 import sys
-
+from datetime import datetime
 def install_requirements():
     try:
         # Attempt to import a core package to test if dependencies are installed
@@ -28,7 +28,7 @@ def open_date_picker():
     top.title("Select a Date")
     
     # Create a Calendar widget
-    cal = Calendar(top, selectmode='day', year=2024, month=10, day=6)
+    cal = Calendar(top, selectmode='day', date_pattern = "yyyy-mm-dd")
     cal.pack(pady=10)
 
     # Function to get and display the selected date
@@ -51,3 +51,6 @@ date_label.pack(pady=10)
 
 # Start the main loop
 root.mainloop()
+date_time = datetime. now()
+todays_date = date_time.date()
+print(todays_date)

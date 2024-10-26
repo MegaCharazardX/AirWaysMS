@@ -78,9 +78,12 @@ def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "itali
         error_label.destroy()
     error_label.after(_cooldowntime, refresh)
 #------------------------------------------------------
+
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= glb_clr_1, fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
+
 #=> --------Sign Up --------------------
+
 global PG_Sign_Up
 def PG_Sign_Up() :
     #print("Hi")
@@ -103,7 +106,40 @@ def PG_Sign_Up() :
         #fligt_search_result_frm.destroy()
         PG_Sign_in()
         
-    
+    def NullCheck():
+        global DOB_selected_date, cal
+        F_name = F_name_Entry.get()
+        L_name = L_name_Entry.get()
+        U_name = U_name_Entry.get()
+        _Gender = Gender.get()
+        if "cal" in globals():
+            dob = cal.get_date()
+        else :
+            dob = ""
+        Gmail = gmail_Entry.get()
+        _pass = pass_Entry.get()
+        _re_pass = re_pass_Entry.get()
+        phonenumber = phonnumber_Entry.get()
+        print(F_name,L_name,U_name,dob,Gmail,_pass,_re_pass,phonenumber)
+        print(_Gender)
+        
+        tmp_qry =f"SELECT U_name FROM user_details WHERE Username= '{U_name}'AND Active = 1"
+        cur.execute(tmp_qry)
+        row = cur.fetchone()
+        if F_name == "" or L_name == "" or U_name == "" or dob == "" or  Gmail == "" or _pass == "" or _re_pass == "" or phonenumber == "" or _Gender == "other" :
+            errorLabeling(form_frm, "Feilds Cannot Be Null", _x = 110, _y = 370)
+
+        if _pass != _re_pass:
+            errorLabeling(form_frm, "Passwords Don't Match", _x = 110, _y = 370)
+            
+        elif row :
+            errorLabeling(form_frm, "UserName Already Exist", _x = 110, _y = 370)
+        
+        else:
+            tmp_qry =f"INSERT INTO animal_details (name, kingdom, phylum, class, naturalorder, family, genus, species) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",(_name, _kingdom, _phylum, _class, _order, _family, _genus, _species)"
+            cur.execute(tmp_qry)
+            row = cur.fetchone()
+            
     dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
     dummy_back_btn.place(x =10, y = 10)
     
@@ -114,8 +150,10 @@ def PG_Sign_Up() :
     L_name_Entry.place(x = 25, y = 50)
     
     def Func_radio_btn():
-        print(Gender.get())
-
+        global _Gender
+        _Gender = Gender.get()
+        print(_Gender)
+    global Gender
     Gender = StringVar(value = "other")
     print(Gender.get())
     
@@ -126,14 +164,37 @@ def PG_Sign_Up() :
     female_radio_btn = createRadioButton(form_frm,"Female", "Female", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)#. place(x = 50, y = 25)
         
     female_radio_btn = createRadioButton(form_frm,"Other", "Other", Gender,Func_radio_btn, 25+130 + 130, rd_btn_y_pos)
+    global cal
     
+    def DOB_open_date_picker():
+        
+        top = CTkToplevel(form_frm)
+        top.title("Select a Date")
+        top.attributes("-topmost", True)
+        global cal
+        cal = Calendar(top, selectmode='day', date_pattern = "yyy-mm-dd")
+        cal.pack(pady=10)
+        def select_date():
+            global DOB_selected_date
+            DOB_selected_date = cal.get_date()
+            DOB_Date_label.configure(text=f"Selected Date : {DOB_selected_date}")
+            top.destroy()
+            
+        select_button = CTkButton(top, text="Select Date", command=select_date)
+        select_button.pack(pady=10)
+
+    DOB_Date_Btn = CTkButton(form_frm, text="Date Of Birth", command=DOB_open_date_picker, corner_radius=100)
+    DOB_Date_Btn.place(x=25, y =rd_btn_y_pos+40)
+
+    DOB_Date_label = CTkLabel(form_frm, text= "Select Date")
+    DOB_Date_label.place(x = 25+170, y = 90+40)
     
     U_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Username")
-    U_name_Entry.place(x = 25, y = 130)
+    U_name_Entry.place(x = 25, y = 130+40)
     
     
     gmail_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Gmail")
-    gmail_Entry.place(x = 25, y = 130+40)
+    gmail_Entry.place(x = 25, y = 170+40)
     
     
     def Show_pass():
@@ -165,9 +226,7 @@ def PG_Sign_Up() :
     phonnumber_Entry = CTkEntry(form_frm, 350, placeholder_text="Phone Number")
     phonnumber_Entry.place(x = 25, y =250+40)
     
-    dob_Widget = CTk
-    
-    Create_acc_btn = CTkButton(form_frm, width = 350, text="Create Account", corner_radius=100)
+    Create_acc_btn = CTkButton(form_frm, width = 350, text="Create Account", corner_radius=100, command = NullCheck)
     Create_acc_btn.place(x = 25, y = 290+40)
     
 #=>3------Sign In Page --------------------------------------
@@ -206,7 +265,7 @@ def PG_Sign_in():
         if (_username == "" or _pass == "" ) :
             errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
         else:
-            temp_qry = f"SELECT U_name, U_Gmail, U_password FROM user_acc WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
+            temp_qry = f"SELECT U_name, U_Gmail, U_password FROM user_details WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
             cur.execute(temp_qry)
             qry_result = cur.fetchone()
             print(qry_result)
@@ -313,6 +372,7 @@ def PG_search_flight_():
         print(f"{index} clicked. ")
         if _isSignedIn == True:
             print("Signed In")
+            PG_Get_Flight_Details()
             pass#----------------------------------------------------------------------------------------------------------------
         else :
             PG_Sign_in()
@@ -332,7 +392,7 @@ def PG_Get_Flight_Details():
     prev_page = 1
     print(prev_page)
     temp_frm_width = 500
-    temp_frm_height = 300
+    temp_frm_height = 320
     div_frame = CTkFrame(Main_fame,width=temp_frm_width, height = temp_frm_height)
     div_frm_xpos = 75
     din_frm_widget_width = 350
@@ -341,6 +401,10 @@ def PG_Get_Flight_Details():
     def Func_radio_btn():
         global radio_val
         radio_val = book_a_fligt_radio_val.get()
+        if radio_val == "ReturnRadio":
+            Dest_Date_Btn.configure(state = tk.NORMAL)
+        else:
+            Dest_Date_Btn.configure(state = tk.DISABLED)
         print(radio_val)
 
     global book_a_fligt_radio_val
@@ -352,7 +416,6 @@ def PG_Get_Flight_Details():
         
     #mulicity_radio_btn = createRadioButton(div_frame, "Multicity", "MulticityRadio", book_a_fligt_radio_val,Func_radio_btn, div_frm_xpos+270, rd_btn_y_pos)#. place(x = 90, y = 25)
 
-    
     def Combo_get_origin_val(origin_combo_value):
         global origin_airport
         origin_airport = origin_combo_value
@@ -370,7 +433,6 @@ def PG_Get_Flight_Details():
                                     variable= departure_place, command = Combo_get_origin_val)
     Origin_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+50)
 
-    
     def Combo_get_dest_val(dest_combo_value):
         global dest_airport
         dest_airport = dest_combo_value
@@ -390,43 +452,69 @@ def PG_Get_Flight_Details():
 
     arrival_place = arrival_place.get()
 
-
     passenger_Class = CTkComboBox(div_frame,width=din_frm_widget_width, values=["Passenger/Class"])
     passenger_Class.place (x = div_frm_xpos, y = rd_btn_y_pos+114)
 
-    
-    def open_date_picker():
+    def Dept_open_date_picker():
         
         top = CTkToplevel(root)
         top.title("Select a Date")
         top.attributes("-topmost", True)
-        cal = Calendar(top, selectmode='day', year=2024, month=10, day=6)
+        cal = Calendar(top, selectmode='day', year=2024, month=10, day=6, date_pattern = "yyyy-mm-dd")
         cal.pack(pady=10)
         def select_date():
-            selected_date = cal.get_date()
-            Dept_date_label.configure(text=f"Selected Date: {selected_date}")
+            global Dept_selected_date
+            Dept_selected_date = cal.get_date()
+            Dept_date_label.configure(text=f"Selected Date : {Dept_selected_date}")
+            top.destroy()
+            
+        select_button = CTkButton(top, text="Select Date", command=select_date)
+        select_button.pack(pady=10)
+
+    Dept_Date_Btn = CTkButton(div_frame, text="Departure Date", command=Dept_open_date_picker, corner_radius=100)
+    Dept_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+154)
+
+    Dept_date_label = CTkLabel(div_frame, text= "Select Date")
+    Dept_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+154)
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    def Dest_open_date_picker():
+        
+        top = CTkToplevel(root)
+        top.title("Select a Date")
+        top.attributes("-topmost", True)
+        cal = Calendar(top, selectmode='day', date_pattern = "yyyy-mm-dd")
+        cal.pack(pady=10)
+        def select_date():
+            global Dest_selected_date
+            Dest_selected_date = cal.get_date()
+            Dest_date_label.configure(text=f"Selected Date : {Dest_selected_date}")
             top.destroy()
             
         select_button = CTkButton(top, text="Select Date", command=select_date)
         select_button.pack(pady=10)
 
     
-    Dept_Date_Btn = CTkButton(div_frame, text="Departure Date", command=open_date_picker, corner_radius=100)
-    Dept_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+154)
+    Dest_Date_Btn = CTkButton(div_frame, text="Arrival Date", command=Dest_open_date_picker, corner_radius=100, state=tk.DISABLED)
+    Dest_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+190)
 
-    Dept_date_label = CTkLabel(div_frame, text= "Select Date")
-    Dept_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+154)
+    Dest_date_label = CTkLabel(div_frame, text= "Select Date")
+    Dest_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+190)
     
     def Null_Check():
         error_name = ""
         try :
+            print(radio_val)
+            print(dest_airport)
+            print(origin_airport)
+            print(Dept_selected_date)
+            print(Dest_selected_date)
             if dest_airport not in globals() or origin_airport not in globals() or radio_val not in globals():
                 pass
             
         except NameError :
             error_name = "NameError"
             error_label = CTkLabel(div_frame, text = "Feilds Cannot Be Empty", font = ("Bradley Hand ITC" , 18, "italic", "bold"), text_color = "red")
-            error_label.place(x = 140, y = 220)
+            error_label.place(x = 140, y = 280)
             def refresh():
                 error_label.destroy()
             error_label.after(3000, refresh)
@@ -436,7 +524,7 @@ def PG_Get_Flight_Details():
                 PG_search_flight_()
                 
     Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check()))
-    Search_Fligths_btn.place(x = div_frm_xpos, y =225)
+    Search_Fligths_btn.place(x = div_frm_xpos, y =245)
     Main_frm_Authentication_Btns()
     
 global Main_frm_Authentication_Btns

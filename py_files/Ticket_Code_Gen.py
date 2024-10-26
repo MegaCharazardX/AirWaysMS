@@ -5,6 +5,7 @@ from random import *
 def Gen_Code():
     date_time = datetime. now()
     todays_date = date_time.date()
+    print(todays_date)
     todays_date = list(str(todays_date))
 
     corrected_date = ""
@@ -29,7 +30,7 @@ def Gen_Code():
     for i in corrected_date :
         corrected_date_ = corrected_date_ + i
         
-    #print(corrected_date_)
+    print(corrected_date_)
 
     sec = list(ascii_letters)
     #print(sec)
