@@ -4,25 +4,26 @@ import os
 import sys
 # KU
 
-# def install(package):
-#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-# # List of required packages
-# required_packages = ["customtkinter", 
-#                      "matplotlib", 
-#                      "pillow",
-#                      "pymysql",
-#                      "colorama",
-#                      "tkcalendar"
-#                     ]
+# List of required packages
+required_packages = ["customtkinter", 
+                     "matplotlib", 
+                     "pillow",
+                     "pymysql",
+                     "colorama",
+                     "tkcalendar"
+                    ]
 
-# # Install missing packages
-# for package in required_packages:
-#     try:
-#         __import__(package)
-#         print(f"{package} Succesfully installed.")
-#     except ImportError:
-#         install(package)
+# Install missing packages
+for package in required_packages:
+    try:
+        __import__(package)
+        print(f"{package} Succesfully installed.")
+    except ImportError:
+        install(package)
+
 
 from customtkinter import *
 from PIL import Image
@@ -33,6 +34,7 @@ from tkcalendar import Calendar
 import tkinter as tk 
 from Usable_screen import ScreenGeometry as SG
 from tkcalendar import Calendar
+from datetime import datetime
 from tkinter import Toplevel
 from colorama import Fore
 
@@ -79,7 +81,7 @@ def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "itali
     error_label.after(_cooldowntime, refresh)
 #------------------------------------------------------
 
-Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= glb_clr_1, fg_color="transparent")
+Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
 
 #=> --------Sign Up --------------------
@@ -114,6 +116,11 @@ def PG_Sign_Up() :
         _Gender = Gender.get()
         if "cal" in globals():
             dob = cal.get_date()
+            dob_dt = datetime.strptime(dob, "%Y-%m-%d")
+            today = datetime.today()
+            Age = today.year - dob_dt.year
+            if (today.month, today.day) > (dob_dt.month, dob_dt.day):
+                Age +=1
         else :
             dob = ""
         Gmail = gmail_Entry.get()
@@ -123,23 +130,50 @@ def PG_Sign_Up() :
         print(F_name,L_name,U_name,dob,Gmail,_pass,_re_pass,phonenumber)
         print(_Gender)
         
-        tmp_qry =f"SELECT U_name FROM user_details WHERE Username= '{U_name}'AND Active = 1"
+        tmp_qry =f"SELECT U_name FROM user_details WHERE U_name= '{U_name}'"
         cur.execute(tmp_qry)
         row = cur.fetchone()
         if F_name == "" or L_name == "" or U_name == "" or dob == "" or  Gmail == "" or _pass == "" or _re_pass == "" or phonenumber == "" or _Gender == "other" :
-            errorLabeling(form_frm, "Feilds Cannot Be Null", _x = 110, _y = 370)
+            errorLabeling(form_frm, "Feilds Cannot Be Null", _x = 110, _y = 410)
 
         if _pass != _re_pass:
-            errorLabeling(form_frm, "Passwords Don't Match", _x = 110, _y = 370)
+            errorLabeling(form_frm, "Passwords Don't Match", _x = 110, _y = 410)
             
         elif row :
-            errorLabeling(form_frm, "UserName Already Exist", _x = 110, _y = 370)
+            errorLabeling(form_frm, "Username Already Exist", _x = 110, _y = 410)
         
         else:
-            tmp_qry =f"INSERT INTO animal_details (name, kingdom, phylum, class, naturalorder, family, genus, species) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",(_name, _kingdom, _phylum, _class, _order, _family, _genus, _species)"
-            cur.execute(tmp_qry)
-            row = cur.fetchone()
-            
+            cur.execute("SELECT Count(*) FROM user_details")
+            ans = cur.fetchone()  # ans will be a tuple, e.g., (5,)
+
+            # Extract the count value from the tuple and add 1
+            new_uid = ans[0] + 1
+
+            # Insert the new record with the new UID
+            tmp_qry = """
+                INSERT INTO user_details (UID, UF_name, UL_name, U_name, U_Gmail, U_phno, U_password, U_dob, U_gender, U_AGE)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cur.execute(tmp_qry, (new_uid, F_name, L_name, U_name, Gmail, phonenumber, _pass, dob, _Gender, Age))
+
+            cur.execute("SELECT Count(*) FROM user_details")
+            ans2 = cur.fetchone()
+
+            con.commit()
+            if ans2 > ans :
+                errorLabeling(form_frm, "Succesfully Added", _textcolor = "green", _x = 110, _y = 410)
+                def _fun():
+                    global _isSignedIn, User
+                    _isSignedIn = True
+                    User = U_name
+                    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------------------------
+                    PG_Get_Flight_Details()
+                errorLabeling(form_frm, "Succesfully Added", _textcolor = "green", _x = 110, _y = 410)
+                fun_lbl = CTkLabel(form_frm)
+                fun_lbl.after(4000, _fun)    
+            else:
+                errorLabeling(form_frm, "Error Occured While Inserting Try Restarting", _x = 5, _y = 410)
+               
     dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
     dummy_back_btn.place(x =10, y = 10)
     
@@ -159,11 +193,11 @@ def PG_Sign_Up() :
     
     rd_btn_y_pos = 90
     
-    male_radio_btn = createRadioButton(form_frm, "Male","Male",Gender,Func_radio_btn,25, rd_btn_y_pos)#. place(x = 10, y = 25)
+    male_radio_btn = createRadioButton(form_frm, "Male","M",Gender,Func_radio_btn,25, rd_btn_y_pos)#. place(x = 10, y = 25)
         
-    female_radio_btn = createRadioButton(form_frm,"Female", "Female", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)#. place(x = 50, y = 25)
+    female_radio_btn = createRadioButton(form_frm,"Female", "F", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)#. place(x = 50, y = 25)
         
-    female_radio_btn = createRadioButton(form_frm,"Other", "Other", Gender,Func_radio_btn, 25+130 + 130, rd_btn_y_pos)
+    other_radio_btn = createRadioButton(form_frm,"Other", "O", Gender,Func_radio_btn, 25+130 + 130, rd_btn_y_pos)
     global cal
     
     def DOB_open_date_picker():
@@ -172,7 +206,7 @@ def PG_Sign_Up() :
         top.title("Select a Date")
         top.attributes("-topmost", True)
         global cal
-        cal = Calendar(top, selectmode='day', date_pattern = "yyy-mm-dd")
+        cal = Calendar(top, selectmode='day', date_pattern = "yyyy-mm-dd")
         cal.pack(pady=10)
         def select_date():
             global DOB_selected_date
@@ -216,18 +250,18 @@ def PG_Sign_Up() :
     pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
     show_btn = CTkButton(pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=Show_pass)
     show_btn.place(x = 304, y=0)
-    pass_Entry.place(x = 25, y = 170+40)
+    pass_Entry.place(x = 25, y = 170+80)
     
-    re_pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Re-Password")
+    re_pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Re-Password", show = "*")
     re_show_btn = CTkButton(re_pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=Re_Show_pass)
     re_show_btn.place(x = 304, y=0)
-    re_pass_Entry.place(x = 25, y = 210+40)
+    re_pass_Entry.place(x = 25, y = 210+80)
     
     phonnumber_Entry = CTkEntry(form_frm, 350, placeholder_text="Phone Number")
-    phonnumber_Entry.place(x = 25, y =250+40)
+    phonnumber_Entry.place(x = 25, y =250+80)
     
     Create_acc_btn = CTkButton(form_frm, width = 350, text="Create Account", corner_radius=100, command = NullCheck)
-    Create_acc_btn.place(x = 25, y = 290+40)
+    Create_acc_btn.place(x = 25, y = 290+80)
     
 #=>3------Sign In Page --------------------------------------
 global PG_Sign_in
@@ -260,8 +294,8 @@ def PG_Sign_in():
     
     def Login_authentication(_username, _pass):
         global _isSignedIn, User
-        _username= "vs_hari_dhejus" #_username.get()
-        _pass = "Charazard101"#_pass.get()
+        _username=  _username.get() #"vs_hari_dhejus"
+        _pass = _pass.get() #"Charazard101"
         if (_username == "" or _pass == "" ) :
             errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
         else:
