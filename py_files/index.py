@@ -4,25 +4,25 @@ import os
 import sys
 # KU
 
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+# def install(package):
+#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-# List of required packages
-required_packages = ["customtkinter", 
-                     "matplotlib", 
-                     "pillow",
-                     "pymysql",
-                     "colorama",
-                     "tkcalendar"
-                    ]
+# # List of required packages
+# required_packages = ["customtkinter", 
+#                      "matplotlib", 
+#                      "pillow",
+#                      "pymysql",
+#                      "colorama",
+#                      "tkcalendar"
+#                     ]
 
-# Install missing packages
-for package in required_packages:
-    try:
-        __import__(package)
-        print(f"{package} Succesfully installed.")
-    except ImportError:
-        install(package)
+# # Install missing packages
+# for package in required_packages:
+#     try:
+#         __import__(package)
+#         print(f"{package} Succesfully installed.")
+#     except ImportError:
+#         install(package)
 
 
 from customtkinter import *
@@ -83,6 +83,12 @@ def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "itali
 
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
+
+def PG_Payment():
+    root.title ("http:www.HADAirlineManagementSystem.com/Payment")
+    for i in Main_fame.winfo_children():
+        i.destroy()
+    
 
 #=> --------Sign Up --------------------
 
@@ -263,14 +269,21 @@ def PG_Sign_Up() :
     Create_acc_btn = CTkButton(form_frm, width = 350, text="Create Account", corner_radius=100, command = NullCheck)
     Create_acc_btn.place(x = 25, y = 290+80)
     
+    tempxpos = 100
+    tempypos = 410
+    Dnt_hv_acc_lbl = CTkLabel(form_frm, text="Already have an account ? ")
+    Dnt_hv_acc_lbl.place(x = tempxpos, y = tempypos)
+    Sign_up_lbl = CTkLabel(form_frm, text="Sign In", font = ("Arial" , 12, "italic", "underline"))
+    Sign_up_lbl.place(x = tempxpos + 150, y = tempypos)
+    
 #=>3------Sign In Page --------------------------------------
 global PG_Sign_in
 def PG_Sign_in():
-    root.title ("http:www.HADAirlineManagementSystem.com/SignIn")
-    for i in Main_fame.winfo_children():
-        i.destroy()
     #div_frame.destroy()
     #fligt_search_result_frm.destroy()
+    root.title ("http:www.HADAirlineManagementSystem.com/Sign_In")
+    for i in Main_fame.winfo_children():
+        i.destroy()
     
     form_frm_width = 400
     form_frm_height = 340
@@ -280,12 +293,20 @@ def PG_Sign_in():
                                   )
     
     def go_back():
-        for i in Main_fame.winfo_children():
-            i.destroy()
-        #fligt_search_result_frm.destroy()
-        Main_frm_Authentication_Btns()
-        PG_search_flight_()
-        
+        global _isSignedIn
+        if _isSignedIn == True :
+            for i in Main_fame.winfo_children():
+                i.destroy()
+            #fligt_search_result_frm.destroy()
+            Main_frm_Authentication_Btns()
+            PG_search_flight_()
+        else : 
+            for i in Main_fame.winfo_children():
+                i.destroy()
+            #fligt_search_result_frm.destroy()
+            Main_frm_Authentication_Btns()
+            PG_Get_Flight_Details()
+            
     dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
     dummy_back_btn.place(x =10, y = 10)
 
@@ -362,8 +383,7 @@ bring in that feature.""",_textcolor = "#007acc", _cooldowntime = None)
     Sign_up_lbl.bind("<Enter>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "#007acc"))
     Sign_up_lbl.bind("<Leave>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "Light Gray"))
 
-#=>2------Show Flights details --------------------------------------
-
+# =>2------Show Flights details --------------------------------------
 global PG_search_flight_
 def PG_search_flight_():
     prev_page = 2
@@ -382,7 +402,8 @@ def PG_search_flight_():
                                   y = (m_r_height/(2)-(temp_frm_height/2))
                                   )
 
-    
+    PG_Heading = CTkLabel(fligt_search_result_frm, text = "AVAILABLE FLIGHTS")
+    PG_Heading.pack(padx = 25, pady = 10, anchor = "w")
     def go_back():
         for i in Main_fame.winfo_children():
             i.destroy()
@@ -393,14 +414,18 @@ def PG_search_flight_():
     dummy_back_btn.place(x =10, y = 10)
     
     btns = []
-
-    btn_data= {
-        1:"F1",
-        2:"F2",
-        3:"F3",
-        4:"F4",
-        5:"F5"
-    }
+    
+    global radio_val, dest_airport, origin_airport
+    temp_qry = "SELECT F_Departure, F_Ariaval, F_Airline, F_price FROM flight WHERE F_Departure = '" + origin_airport+ "' AND F_Ariaval = '" + dest_airport+ "';"
+    cur.execute(temp_qry)
+    result = cur.fetchall()
+    btn_data= {}
+    key = 1
+    for i in result :
+        btn_data[key] = f"{i[0]} -----> {i[1]} : {i[2]} : {i[3]}"
+        print(i)
+        key += 1
+    print(btn_data)    
 
     def on_btn_click(index):
         print(f"{index} clicked. ")
@@ -413,11 +438,10 @@ def PG_search_flight_():
         
     for id, label in btn_data.items() :
         
-        btn = CTkButton(fligt_search_result_frm, text = label, command = lambda id=id: on_btn_click(id)).pack(pady = 10)
+        btn = CTkButton(fligt_search_result_frm, text = label,bg_color="transparent", command = lambda id=id: on_btn_click(id)).pack(pady = 10, padx = 10, anchor = "w")
         btns.append(btn)
         
 # =>1-----Get Flight details---------------------------------------------------------------------   
-
 def PG_Get_Flight_Details():
     global div_frame, _isSignedIn, User    
     for i in Main_fame.winfo_children():
@@ -494,7 +518,7 @@ def PG_Get_Flight_Details():
         top = CTkToplevel(root)
         top.title("Select a Date")
         top.attributes("-topmost", True)
-        cal = Calendar(top, selectmode='day', year=2024, month=10, day=6, date_pattern = "yyyy-mm-dd")
+        cal = Calendar(top, selectmode='day', date_pattern = "yyyy-mm-dd")
         cal.pack(pady=10)
         def select_date():
             global Dept_selected_date
@@ -537,11 +561,14 @@ def PG_Get_Flight_Details():
     def Null_Check():
         error_name = ""
         try :
+            global radio_val, dest_airport, origin_airport
             print(radio_val)
             print(dest_airport)
             print(origin_airport)
             print(Dept_selected_date)
-            print(Dest_selected_date)
+            if radio_val == "ReturnRadio" :
+                print(Dest_selected_date)
+            
             if dest_airport not in globals() or origin_airport not in globals() or radio_val not in globals():
                 pass
             
@@ -581,4 +608,5 @@ PG_Get_Flight_Details()
 
 #root.resizable(True,True)
 root.mainloop()
-
+cur.close()
+con.commit()
