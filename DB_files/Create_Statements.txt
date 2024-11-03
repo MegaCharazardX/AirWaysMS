@@ -1,0 +1,47 @@
+CREATE DATABASE `airwaysms2_0` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+CREATE TABLE `booking` (
+  `BID` varchar(100) NOT NULL,
+  `BU_NAME` varchar(100) DEFAULT NULL,
+  `B_FLIGHT` int DEFAULT NULL,
+  `IS_ACTIVE` int DEFAULT NULL,
+  PRIMARY KEY (`BID`),
+  KEY `B_FORIEGN_KEY_idx` (`B_FLIGHT`),
+  CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flight` (`F_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `flight` (
+  `F_ID` int NOT NULL AUTO_INCREMENT,
+  `FU_ID` int DEFAULT NULL,
+  `F_Departure` varchar(100) DEFAULT NULL,
+  `F_Ariaval` varchar(100) DEFAULT NULL,
+  `F_Airline` varchar(45) NOT NULL,
+  `F_price` int DEFAULT NULL,
+  PRIMARY KEY (`F_ID`),
+  KEY `AU_ID_idx` (`FU_ID`),
+  CONSTRAINT `FFK` FOREIGN KEY (`FU_ID`) REFERENCES `user_details` (`UID`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `payment` (
+  `PID` int DEFAULT NULL,
+  `AMOUNT` int DEFAULT NULL,
+  `P_STATUS` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `user_details` (
+  `UID` int NOT NULL AUTO_INCREMENT,
+  `UF_name` varchar(100) DEFAULT NULL,
+  `UL_name` varchar(100) DEFAULT NULL,
+  `U_name` varchar(100) NOT NULL,
+  `U_Gmail` varchar(100) NOT NULL,
+  `U_phno` varchar(12) DEFAULT NULL,
+  `U_password` varchar(100) NOT NULL,
+  `U_dob` date DEFAULT NULL,
+  `U_AGE` int DEFAULT NULL,
+  `U_gender` varchar(5) DEFAULT NULL,
+  `U_isActive` tinyint DEFAULT '1',
+  PRIMARY KEY (`UID`),
+  UNIQUE KEY `U_name_UNIQUE` (`U_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+

@@ -24,7 +24,6 @@ import sys
 #     except ImportError:
 #         install(package)
 
-
 from customtkinter import *
 from PIL import Image
 from subprocess import call
@@ -58,8 +57,9 @@ con = pymysql.connect(
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
-global prev_page, _isSignedIn, User
+global prev_page, _isSignedIn, User, is_flight_details_obtained
 _isSignedIn = False
+is_flight_details_obtained = False
 User = ""
 prev_page = 0
 glb_clr_1 = "blue"
@@ -84,14 +84,89 @@ def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "itali
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
 
+global PG_Payment
 def PG_Payment():
     root.title ("http:www.HADAirlineManagementSystem.com/Payment")
     for i in Main_fame.winfo_children():
         i.destroy()
     
-
+    form_frm_width = 400
+    form_frm_height = 210
+    form_frm = CTkFrame(Main_fame, width=form_frm_width, height=form_frm_height)
+    form_frm.place(x = (m_r_width/(2))-(form_frm_width/2), y = (m_r_height/(2)-(form_frm_height/2)))
+    
+    def go_back():
+        global _isSignedIn
+        if _isSignedIn == True :
+            for i in Main_fame.winfo_children():
+                i.destroy()
+            Main_frm_Authentication_Btns()
+            PG_search_flight_()
+        else : 
+            for i in Main_fame.winfo_children():
+                i.destroy()
+            Main_frm_Authentication_Btns()
+            PG_Get_Flight_Details()
+            
+    dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+    dummy_back_btn.place(x =10, y = 10)
+    
+    Payment_Method_label = CTkLabel(form_frm, text= "Select Payment Method")
+    Payment_Method_label.place(x = 25, y = 10)
+    
+    CBF_width = 290
+    CBF_height = 28
+    Centre_btn_frame = CTkFrame(form_frm, height=CBF_height, width= CBF_width, fg_color= "transparent") 
+    Centre_btn_frame.place(x = (form_frm_width/(2))-(CBF_width/2),
+                                  y = (form_frm_height/(2)-(CBF_height/2)) )
+    
+    def on_UPI_btn_click():
+        root.title ("http:www.HADAirlineManagementSystem.com/Payment/UPI")
+        for i in form_frm.winfo_children():
+            i.destroy()
+        
+        Temp_Entry_Width = 350
+    
+        UPI_Method_label = CTkLabel(form_frm, text= "UPI -")
+        UPI_Method_label.place(x = 25, y = 10)
+        
+        UPI_Number_Entry = CTkEntry(form_frm, placeholder_text= "UPI Number",width= Temp_Entry_Width)
+        UPI_Number_Entry.place(x =25, y = 50)
+        
+        Amount_Entry = CTkEntry(form_frm, placeholder_text= "Amount",width= Temp_Entry_Width)
+        Amount_Entry.place(x =25, y = 90)
+        
+        def _on_UPI_pay_btn_click():
+            UPI_Number = UPI_Number_Entry.get()
+            Amount = Amount_Entry.get()
+            print(User)
+            
+            if UPI_Number == "" or Amount == "":
+                errorLabeling(form_frm, "Feilds Can Not Be Empty", _x = 90, _y = 170)
+            
+            elif UPI_Number.isdigit() == False or Amount.isdigit() == False:
+                is_flight_details_obtained
+            else:
+                tempqry = "SELECT COUNT(*) FROM payment"
+                cur.execute(tempqry)
+                p_id = int(cur.fetchone())[0] + 1
+                tempqry = "SELECT UID FROM user_details WHERE U_name = {%s}"
+                cur.execute(tempqry, User)
+                Uid = cur.fetchone()
+                tempqry = "INSERT PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM INTO payment VALUES (%s,%s,%s,%s,%s)"
+                cur.execute(tempqry, (int(p_id), int(Uid), int(Amount), 400, int(UPI_Number)))
+                errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 90, _y = 170)
+                
+        Pay_btn = CTkButton(form_frm, width= Temp_Entry_Width, text = "Pay", corner_radius= 100, command= _on_UPI_pay_btn_click)
+        Pay_btn.place(x = 25, y = 130)
+        
+    UPI_btn = CTkButton(Centre_btn_frame, text = "UPI", command= on_UPI_btn_click)
+    UPI_btn.place(x = 0, y = 0)
+    
+    NetBanking_btn = CTkButton(Centre_btn_frame, text = "Net Banking")
+    NetBanking_btn.place(x = 150, y = 0)
+    
 #=> --------Sign Up --------------------
-
 global PG_Sign_Up
 def PG_Sign_Up() :
     #print("Hi")
@@ -275,12 +350,9 @@ def PG_Sign_Up() :
     Dnt_hv_acc_lbl.place(x = tempxpos, y = tempypos)
     Sign_up_lbl = CTkLabel(form_frm, text="Sign In", font = ("Arial" , 12, "italic", "underline"))
     Sign_up_lbl.place(x = tempxpos + 150, y = tempypos)
-    
 #=>3------Sign In Page --------------------------------------
 global PG_Sign_in
 def PG_Sign_in():
-    #div_frame.destroy()
-    #fligt_search_result_frm.destroy()
     root.title ("http:www.HADAirlineManagementSystem.com/Sign_In")
     for i in Main_fame.winfo_children():
         i.destroy()
@@ -332,7 +404,10 @@ def PG_Sign_in():
                 User = qry_result[0]
                 print(User)
                 _isSignedIn = True
-                PG_Get_Flight_Details()
+                if is_flight_details_obtained == True : 
+                    PG_Payment()
+                else:
+                    PG_Get_Flight_Details()
     
     user_Entry = CTkEntry(form_frm, width = 350, placeholder_text= "Username/Gmail")
     user_Entry.place(x = 25, y = 40)
@@ -382,7 +457,6 @@ bring in that feature.""",_textcolor = "#007acc", _cooldowntime = None)
     Sign_up_lbl.bind("<Button-1>", lambda event, : PG_Sign_Up())
     Sign_up_lbl.bind("<Enter>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "#007acc"))
     Sign_up_lbl.bind("<Leave>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "Light Gray"))
-
 # =>2------Show Flights details --------------------------------------
 global PG_search_flight_
 def PG_search_flight_():
@@ -431,7 +505,7 @@ def PG_search_flight_():
         print(f"{index} clicked. ")
         if _isSignedIn == True:
             print("Signed In")
-            PG_Get_Flight_Details()
+            PG_Payment()
             pass#----------------------------------------------------------------------------------------------------------------
         else :
             PG_Sign_in()
@@ -440,7 +514,6 @@ def PG_search_flight_():
         
         btn = CTkButton(fligt_search_result_frm, text = label,bg_color="transparent", command = lambda id=id: on_btn_click(id)).pack(pady = 10, padx = 10, anchor = "w")
         btns.append(btn)
-        
 # =>1-----Get Flight details---------------------------------------------------------------------   
 def PG_Get_Flight_Details():
     global div_frame, _isSignedIn, User    
@@ -454,7 +527,8 @@ def PG_Get_Flight_Details():
     div_frame = CTkFrame(Main_fame,width=temp_frm_width, height = temp_frm_height)
     div_frm_xpos = 75
     din_frm_widget_width = 350
-    div_frame.place(x = ((m_r_width/2)-(temp_frm_width/2)), y = ((m_r_height/2)- (temp_frm_height/2)))
+    div_frame.place(x = (m_r_width/(2))-(temp_frm_width/2),
+                                  y = (m_r_height/(2)-(temp_frm_height/2)))
 
     def Func_radio_btn():
         global radio_val
@@ -563,6 +637,11 @@ def PG_Get_Flight_Details():
         try :
             global radio_val, dest_airport, origin_airport
             print(radio_val)
+            #___--------------______________________---------------------------------------
+            origin_airport = "CHENNAI"
+            dest_airport = "Thiruvananthapuram"
+            Dept_selected_date = "2024-11-22"
+            radio_val = "OnewayRadio"
             print(dest_airport)
             print(origin_airport)
             print(Dept_selected_date)
@@ -582,12 +661,14 @@ def PG_Get_Flight_Details():
             
         finally:
             if error_name != "NameError":
+                global is_flight_details_obtained
+                is_flight_details_obtained = True
                 PG_search_flight_()
                 
     Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check()))
     Search_Fligths_btn.place(x = div_frm_xpos, y =245)
     Main_frm_Authentication_Btns()
-    
+# =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
 def Main_frm_Authentication_Btns():
     if _isSignedIn == True:
@@ -601,7 +682,7 @@ def Main_frm_Authentication_Btns():
         Sign_up_btn.place(x = temp_xpos+150, y = 10)
 
 Main_frm_Authentication_Btns()
-
+# PG_Payment()
 PG_Get_Flight_Details()
 
 #----------------------------------------------------------------------------------
