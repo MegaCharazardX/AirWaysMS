@@ -30,11 +30,13 @@ from subprocess import call
 import Global_Config as GC
 import pymysql
 from tkcalendar import Calendar
+import Ticket_Code_Gen as TCG
 import tkinter as tk 
 from Usable_screen import ScreenGeometry as SG
 from tkcalendar import Calendar
 from datetime import datetime
 from tkinter import Toplevel
+import time 
 from colorama import Fore
 
 m_r_width, m_r_height = SG().GetUsableScreenSize()[0], SG().GetUsableScreenSize()[1]
@@ -52,7 +54,7 @@ con = pymysql.connect(
     host = "localhost",
     user = "root",
     passwd  = "*password*11",
-    database = "airwaysms2_0"
+    #database = "airwaysms2_0"
                     )
 
 cur = con.cursor()
@@ -66,6 +68,65 @@ glb_clr_1 = "blue"
 glb_clr_2 = "green"
 glb_clr_3 = "yellow"
 global  PG_Get_Flight_Details
+
+def DB_INIT_():
+    try :
+        cur.execute("CREATE DATABASE IF NOT EXISTS `airwaysms2_0` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;")
+        cur.execute("""CREATE TABLE IF NOT EXISTS `booking` (
+                        `BID` varchar(100) NOT NULL,
+                        `BU_NAME` varchar(100) DEFAULT NULL,
+                        `B_FLIGHT` int DEFAULT NULL,
+                        `IS_ACTIVE` int DEFAULT NULL,
+                        PRIMARY KEY (`BID`),
+                        KEY `B_FORIEGN_KEY_idx` (`B_FLIGHT`),
+                        CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        cur.execute("""CREATE TABLE IF NOT EXISTS `flights` (
+                        `F_ID` int NOT NULL AUTO_INCREMENT,
+                        `FU_ID` int DEFAULT NULL,
+                        `F_Departure` varchar(100) DEFAULT NULL,
+                        `F_Ariaval` varchar(100) DEFAULT NULL,
+                        `F_Airline` varchar(45) NOT NULL,
+                        `F_price` int DEFAULT NULL,
+                        PRIMARY KEY (`F_ID`),
+                        KEY `AU_ID_idx` (`FU_ID`),
+                        CONSTRAINT `FFK` FOREIGN KEY (`FU_ID`) REFERENCES `user_details` (`UID`)
+                        ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        cur.execute("""CREATE TABLE IF NOT EXISTS `payment` (
+                        `PID` int DEFAULT NULL,
+                        `AMOUNT` int DEFAULT NULL,
+                        `P_STATUS` int DEFAULT NULL
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        cur.execute("""CREATE TABLE IF NOT EXISTS `user_details` (
+                        `UID` int NOT NULL AUTO_INCREMENT,
+                        `UF_name` varchar(100) DEFAULT NULL,
+                        `UL_name` varchar(100) DEFAULT NULL,
+                        `U_name` varchar(100) NOT NULL,
+                        `U_Gmail` varchar(100) NOT NULL,
+                        `U_phno` varchar(12) DEFAULT NULL,
+                        `U_password` varchar(100) NOT NULL,
+                        `U_dob` date DEFAULT NULL,
+                        `U_AGE` int DEFAULT NULL,
+                        `U_gender` varchar(5) DEFAULT NULL,
+                        `U_isActive` tinyint DEFAULT '1',
+                        PRIMARY KEY (`UID`),
+                        UNIQUE KEY `U_name_UNIQUE` (`U_name`)
+                        ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        #### INSERT COMMANDSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS  
+        
+        con.commit()
+              
+    except Exception as e:
+        print(f'Caught {type(e)}: e')
+        
+    finally :
+        print("Sucessfully Initialized Database.")
+        cur.execute("USE airwaysms2_0 ;")
+DB_INIT_()
 #--------------------- GLOBAL FUNCTIONS ---------------------------------
 
 def createRadioButton (_frame ,_text : str , _value, _variable, _command,  _xpos : int, _ypos  : int):
@@ -84,6 +145,17 @@ def errorLabeling(_Master, _text : str, _font = ("Bradley Hand ITC" , 18, "itali
 Main_fame = CTkFrame(root, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
 Main_fame.place(x = 0, y = 0)
 
+global booking
+def booking ():
+    Ticket_Code = TCG.Gen_Code()
+    cur.execute("SELECT * FROM flights where F_ID ='%s'", Flight_ID)
+    cur.execute("SELECT COUNT(*) FROM booking")
+    F_id = cur.fetchone()[0] 
+    print(F_id)
+    cur.execute("INSERT INTO booking (BID, BU_NAME, B_FLIGHT) VALUES (%s, %s, %s)", (Ticket_Code, User, Flight_ID))
+    con.commit()
+    errorLabeling(form_frm, "Sucessfully Booked", _textcolor = "green", _x = 120, _y = 170)
+    
 global PG_Payment
 def PG_Payment():
     root.title ("http:www.HADAirlineManagementSystem.com/Payment")
@@ -92,21 +164,12 @@ def PG_Payment():
     
     form_frm_width = 400
     form_frm_height = 210
+    global form_frm
     form_frm = CTkFrame(Main_fame, width=form_frm_width, height=form_frm_height)
     form_frm.place(x = (m_r_width/(2))-(form_frm_width/2), y = (m_r_height/(2)-(form_frm_height/2)))
     
     def go_back():
-        global _isSignedIn
-        if _isSignedIn == True :
-            for i in Main_fame.winfo_children():
-                i.destroy()
-            Main_frm_Authentication_Btns()
-            PG_search_flight_()
-        else : 
-            for i in Main_fame.winfo_children():
-                i.destroy()
-            Main_frm_Authentication_Btns()
-            PG_Get_Flight_Details()
+        PG_search_flight_()
             
     dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
     dummy_back_btn.place(x =10, y = 10)
@@ -124,7 +187,12 @@ def PG_Payment():
         root.title ("http:www.HADAirlineManagementSystem.com/Payment/UPI")
         for i in form_frm.winfo_children():
             i.destroy()
-        
+    
+        def go_back():
+            PG_Payment()
+                
+        dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+        dummy_back_btn.place(x =10, y = 10)
         Temp_Entry_Width = 350
     
         UPI_Method_label = CTkLabel(form_frm, text= "UPI -")
@@ -133,12 +201,16 @@ def PG_Payment():
         UPI_Number_Entry = CTkEntry(form_frm, placeholder_text= "UPI Number",width= Temp_Entry_Width)
         UPI_Number_Entry.place(x =25, y = 50)
         
-        Amount_Entry = CTkEntry(form_frm, placeholder_text= "Amount",width= Temp_Entry_Width)
-        Amount_Entry.place(x =25, y = 90)
+        cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
+        Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
+        
+        Amount_LBL = CTkLabel(form_frm,text= f"Amount : {Amount}",width= Temp_Entry_Width)
+        Amount_LBL.place(x =25, y = 90)
         
         def _on_UPI_pay_btn_click():
             UPI_Number = UPI_Number_Entry.get()
-            Amount = Amount_Entry.get()
+            cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
+            Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
             print(User)
             
             if UPI_Number == "" or Amount == "":
@@ -147,15 +219,25 @@ def PG_Payment():
             elif UPI_Number.isdigit() == False or Amount.isdigit() == False:
                 is_flight_details_obtained
             else:
+                Amount = int(Amount)
+                UPI_Number = int(UPI_Number)
                 tempqry = "SELECT COUNT(*) FROM payment"
                 cur.execute(tempqry)
-                p_id = int(cur.fetchone())[0] + 1
-                tempqry = "SELECT UID FROM user_details WHERE U_name = {%s}"
-                cur.execute(tempqry, User)
-                Uid = cur.fetchone()
-                tempqry = "INSERT PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM INTO payment VALUES (%s,%s,%s,%s,%s)"
-                cur.execute(tempqry, (int(p_id), int(Uid), int(Amount), 400, int(UPI_Number)))
-                errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 90, _y = 170)
+                p_id = int(cur.fetchone()[0])+1
+                tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
+                cur.execute(tempqry)
+                Uid = int(cur.fetchone()[0])
+                tempqry = "INSERT INTO payment (PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s, %s)"
+                cur.execute(tempqry, (p_id,Uid,Amount,400,UPI_Number, "UPI"))
+                errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
+                def delayed_lbl():
+                    errorLabeling(form_frm, "Booking Ticket ...", _textcolor = "green", _x = 1100, _y = 170)
+                    def delayed():
+                        booking()
+                        PG_Get_Flight_Details()
+                    root.after(3000, delayed)
+                con.commit()
+                root.after(3000, delayed_lbl)
                 
         Pay_btn = CTkButton(form_frm, width= Temp_Entry_Width, text = "Pay", corner_radius= 100, command= _on_UPI_pay_btn_click)
         Pay_btn.place(x = 25, y = 130)
@@ -163,8 +245,70 @@ def PG_Payment():
     UPI_btn = CTkButton(Centre_btn_frame, text = "UPI", command= on_UPI_btn_click)
     UPI_btn.place(x = 0, y = 0)
     
-    NetBanking_btn = CTkButton(Centre_btn_frame, text = "Net Banking")
+    def on_NET_btn_click():
+        root.title ("http:www.HADAirlineManagementSystem.com/Payment/UPI")
+        for i in form_frm.winfo_children():
+            i.destroy()
+    
+        def go_back():
+            PG_Payment()
+                
+        dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+        dummy_back_btn.place(x =10, y = 10)
+        
+        Temp_Entry_Width = 350
+    
+        NETB_Method_label = CTkLabel(form_frm, text= "NET BANKING -")
+        NETB_Method_label.place(x = 25, y = 10)
+        
+        NETB_Number_Entry = CTkEntry(form_frm, placeholder_text= "Account Number",width= Temp_Entry_Width)
+        NETB_Number_Entry.place(x =25, y = 50)
+        
+        cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
+        Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
+        
+        Amount_LBL = CTkLabel(form_frm,text= f"Amount : {Amount}",width= Temp_Entry_Width)
+        Amount_LBL.place(x =25, y = 90)
+        
+        def _on_NETB_pay_btn_click():
+            ACC_Number = NETB_Number_Entry.get()
+            cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
+            Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
+            print(User)
+            
+            if ACC_Number == "" or Amount == "":
+                errorLabeling(form_frm, "Feilds Can Not Be Empty", _x = 90, _y = 170)
+            
+            elif ACC_Number.isdigit() == False or Amount.isdigit() == False:
+                is_flight_details_obtained
+            else:
+                Amount = int(Amount)
+                ACC_Number = int(ACC_Number)
+                tempqry = "SELECT COUNT(*) FROM payment"
+                cur.execute(tempqry)
+                p_id = int(cur.fetchone()[0])+1
+                tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
+                cur.execute(tempqry)
+                Uid = int(cur.fetchone()[0])
+                tempqry = "INSERT INTO payment (PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s, %s)"
+                cur.execute(tempqry, (p_id,Uid,Amount,400,ACC_Number, "NET"))
+                con.commit()
+                errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
+                def delayed_lbl():
+                    errorLabeling(form_frm, "Booking Ticket ...", _textcolor = "green", _x = 1100, _y = 170)
+                    def delayed():
+                        booking()
+                        PG_Get_Flight_Details()
+                    root.after(3000, delayed)
+                con.commit()
+                root.after(3000, delayed_lbl)
+                
+        Pay_btn = CTkButton(form_frm, width= Temp_Entry_Width, text = "Pay", corner_radius= 100, command= _on_NETB_pay_btn_click)
+        Pay_btn.place(x = 25, y = 130)
+        
+    NetBanking_btn = CTkButton(Centre_btn_frame, text = "Net Banking", command= on_NET_btn_click)
     NetBanking_btn.place(x = 150, y = 0)
+    Main_frm_Authentication_Btns()
     
 #=> --------Sign Up --------------------
 global PG_Sign_Up
@@ -236,6 +380,7 @@ def PG_Sign_Up() :
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             cur.execute(tmp_qry, (new_uid, F_name, L_name, U_name, Gmail, phonenumber, _pass, dob, _Gender, Age))
+            con.commit()
 
             cur.execute("SELECT Count(*) FROM user_details")
             ans2 = cur.fetchone()
@@ -387,8 +532,9 @@ def PG_Sign_in():
     
     def Login_authentication(_username, _pass):
         global _isSignedIn, User
-        _username=  _username.get() #"vs_hari_dhejus"
-        _pass = _pass.get() #"Charazard101"
+        _isSignedIn = True
+        _username=  _username.get() #"vs_hari_dhejus" 
+        _pass = _pass.get()  #"Charazard101" 
         if (_username == "" or _pass == "" ) :
             errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
         else:
@@ -490,36 +636,45 @@ def PG_search_flight_():
     btns = []
     
     global radio_val, dest_airport, origin_airport
-    temp_qry = "SELECT F_Departure, F_Ariaval, F_Airline, F_price FROM flight WHERE F_Departure = '" + origin_airport+ "' AND F_Ariaval = '" + dest_airport+ "';"
+    temp_qry = "SELECT F_Departure, F_Ariaval, F_Airline, F_price, F_ID FROM flights WHERE F_Departure = '" + origin_airport+ "' AND F_Ariaval = '" + dest_airport+ "';"
     cur.execute(temp_qry)
     result = cur.fetchall()
     btn_data= {}
+    FLIGHT_ID_dict = {}
     key = 1
     for i in result :
         btn_data[key] = f"{i[0]} -----> {i[1]} : {i[2]} : {i[3]}"
+        FLIGHT_ID_dict[key] = i[4]
         print(i)
         key += 1
     print(btn_data)    
 
     def on_btn_click(index):
         print(f"{index} clicked. ")
+        print(result)
+        print(FLIGHT_ID_dict[index])
+        global Flight_ID
+        Flight_ID = FLIGHT_ID_dict[index]
         if _isSignedIn == True:
             print("Signed In")
             PG_Payment()
             pass#----------------------------------------------------------------------------------------------------------------
         else :
             PG_Sign_in()
-        
+            pass
     for id, label in btn_data.items() :
         
-        btn = CTkButton(fligt_search_result_frm, text = label,bg_color="transparent", command = lambda id=id: on_btn_click(id)).pack(pady = 10, padx = 10, anchor = "w")
+        btn = CTkButton(fligt_search_result_frm, text = label,bg_color="transparent", command = lambda idx=id: on_btn_click(idx)).pack(pady = 10, padx = 10, anchor = "w")
         btns.append(btn)
+    con.commit()
+    Main_frm_Authentication_Btns()    
+    
 # =>1-----Get Flight details---------------------------------------------------------------------   
 def PG_Get_Flight_Details():
     global div_frame, _isSignedIn, User    
     for i in Main_fame.winfo_children():
         i.destroy()
-        
+                
     prev_page = 1
     print(prev_page)
     temp_frm_width = 500
@@ -638,10 +793,10 @@ def PG_Get_Flight_Details():
             global radio_val, dest_airport, origin_airport
             print(radio_val)
             #___--------------______________________---------------------------------------
-            origin_airport = "CHENNAI"
-            dest_airport = "Thiruvananthapuram"
-            Dept_selected_date = "2024-11-22"
-            radio_val = "OnewayRadio"
+            # origin_airport = "CHENNAI"
+            # dest_airport = "Thiruvananthapuram"
+            # Dept_selected_date = "2024-11-22"
+            # radio_val = "OnewayRadio"
             print(dest_airport)
             print(origin_airport)
             print(Dept_selected_date)
@@ -667,7 +822,9 @@ def PG_Get_Flight_Details():
                 
     Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check()))
     Search_Fligths_btn.place(x = div_frm_xpos, y =245)
+    con.commit()
     Main_frm_Authentication_Btns()
+    
 # =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
 def Main_frm_Authentication_Btns():
@@ -682,6 +839,7 @@ def Main_frm_Authentication_Btns():
         Sign_up_btn.place(x = temp_xpos+150, y = 10)
 
 Main_frm_Authentication_Btns()
+
 # PG_Payment()
 PG_Get_Flight_Details()
 

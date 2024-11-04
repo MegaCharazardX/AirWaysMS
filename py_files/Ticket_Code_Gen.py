@@ -49,6 +49,6 @@ def return_date_time(millisecond = False):
         now_time = str(datetime. now()).split(".")
         return now_time[0]
     
-print(Gen_Code())
-print( return_date_time())
+#print(Gen_Code())
+#print( return_date_time())
 
