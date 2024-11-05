@@ -4,25 +4,25 @@ import os
 import sys
 # KU
 
-# def install(package):
-#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-# # List of required packages
-# required_packages = ["customtkinter", 
-#                      "matplotlib", 
-#                      "pillow",
-#                      "pymysql",
-#                      "colorama",
-#                      "tkcalendar"
-#                     ]
+# List of required packages
+required_packages = ["customtkinter", 
+                     "matplotlib", 
+                     "pillow",
+                     "pymysql",
+                     "colorama",
+                     "tkcalendar"
+                    ]
 
-# # Install missing packages
-# for package in required_packages:
-#     try:
-#         __import__(package)
-#         print(f"{package} Succesfully installed.")
-#     except ImportError:
-#         install(package)
+# Install missing packages
+for package in required_packages:
+    try:
+        __import__(package)
+        print(f"{package} Succesfully installed.")
+    except ImportError:
+        install(package)
 
 from customtkinter import *
 from PIL import Image
