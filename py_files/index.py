@@ -33,10 +33,12 @@ from tkcalendar import Calendar
 import Ticket_Code_Gen as TCG
 import tkinter as tk 
 from Usable_screen import ScreenGeometry as SG
+from pathlib import Path
 from tkcalendar import Calendar
 from datetime import datetime
 from tkinter import Toplevel
 import time 
+from flights import major_airports
 import random
 import ast
 from colorama import Fore
@@ -62,9 +64,9 @@ con = pymysql.connect(
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
 global prev_page, _isSignedIn, User, is_flight_details_obtained
-_isSignedIn = False
+_isSignedIn = True #FALSE########################################################################################
 is_flight_details_obtained = False
-User = ""
+User = "_Vibu_" ###############################################################################################################
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
@@ -158,33 +160,8 @@ global  PG_Get_Flight_Details
 def DB_INIT_():
     try :
         cur.execute("CREATE DATABASE IF NOT EXISTS `airwaysms2_0` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;")
-        cur.execute("""CREATE TABLE IF NOT EXISTS `booking` (
-                        `BID` varchar(100) NOT NULL,
-                        `BU_NAME` varchar(100) DEFAULT NULL,
-                        `B_FLIGHT` int DEFAULT NULL,
-                        `IS_ACTIVE` int DEFAULT NULL,
-                        PRIMARY KEY (`BID`),
-                        KEY `B_FORIEGN_KEY_idx` (`B_FLIGHT`),
-                        CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
-                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
-        
-        cur.execute("""CREATE TABLE `flights` (
-                        `F_ID` int NOT NULL AUTO_INCREMENT,
-                        `F_Departure` varchar(100) DEFAULT NULL,
-                        `F_Ariaval` varchar(100) DEFAULT NULL,
-                        `F_Airline` varchar(45) NOT NULL,
-                        `F_price` int DEFAULT NULL,
-                        PRIMARY KEY (`F_ID`)
-                        ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-            """)
-        
+              
                         #`FU_ID` int DEFAULT NULL,
-        cur.execute("""CREATE TABLE IF NOT EXISTS `payment` (
-                        `PID` int DEFAULT NULL,
-                        `AMOUNT` int DEFAULT NULL,
-                        `P_STATUS` int DEFAULT NULL
-                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
-        
         cur.execute("""CREATE TABLE IF NOT EXISTS `user_details` (
                         `UID` int NOT NULL AUTO_INCREMENT,
                         `UF_name` varchar(100) DEFAULT NULL,
@@ -200,6 +177,33 @@ def DB_INIT_():
                         PRIMARY KEY (`UID`),
                         UNIQUE KEY `U_name_UNIQUE` (`U_name`)
                         ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        cur.execute("""CREATE TABLE `flights` (
+                        `F_ID` int NOT NULL AUTO_INCREMENT,
+                        `F_Departure` varchar(100) DEFAULT NULL,
+                        `F_Ariaval` varchar(100) DEFAULT NULL,
+                        `F_Airline` varchar(45) NOT NULL,
+                        `F_price` int DEFAULT NULL,
+                        PRIMARY KEY (`F_ID`)
+                        ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+                    """)
+        
+        cur.execute("""CREATE TABLE IF NOT EXISTS `booking` (
+                        `BID` varchar(100) NOT NULL,
+                        `BU_NAME` varchar(100) DEFAULT NULL,
+                        `B_FLIGHT` int DEFAULT NULL,
+                        `IS_ACTIVE` int DEFAULT NULL,
+                        PRIMARY KEY (`BID`),
+                        KEY `B_FORIEGN_KEY_idx` (`B_FLIGHT`),
+                        CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+        
+        cur.execute("""CREATE TABLE IF NOT EXISTS `payment` (
+                        `PID` int DEFAULT NULL,
+                        `AMOUNT` int DEFAULT NULL,
+                        `P_METHOD` varchar(25) DEFAULT NULL,
+                        `P_STATUS` int DEFAULT NULL
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
         
         ##### INSERT COMMANDSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS  
         def get_price(departure, arrival, airline):
@@ -341,8 +345,8 @@ def PG_Payment():
                 tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
-                tempqry = "INSERT INTO payment (PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s, %s)"
-                cur.execute(tempqry, (p_id,Uid,Amount,400,UPI_Number, "UPI"))
+                tempqry = "INSERT INTO payment (PID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s)"
+                cur.execute(tempqry, (p_id,Amount,400,UPI_Number, "UPI"))
                 errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
                 def delayed_lbl():
                     errorLabeling(form_frm, "Booking Ticket ...", _textcolor = "green", _x = 1100, _y = 170)
@@ -404,8 +408,8 @@ def PG_Payment():
                 tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
-                tempqry = "INSERT INTO payment (PID, P_UID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s, %s)"
-                cur.execute(tempqry, (p_id,Uid,Amount,400,ACC_Number, "NET"))
+                tempqry = "INSERT INTO payment (PID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s)"
+                cur.execute(tempqry, (p_id,Amount,400,ACC_Number, "NET"))
                 con.commit()
                 errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
                 def delayed_lbl():
@@ -826,11 +830,7 @@ def PG_Get_Flight_Details():
     departure_place.set("Departure")
     
     Origin_Airport = CTkComboBox(div_frame,width=din_frm_widget_width,
-                                values= [
-                                    "Boston",
-                                    "Chennai",
-                                    "Thiruvananthapuram"
-                                    ],
+                                values=major_airports,
                                     variable= departure_place, command = Combo_get_origin_val)
     Origin_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+50)
 
@@ -843,12 +843,8 @@ def PG_Get_Flight_Details():
     arrival_place = StringVar(value="des_combo_other")
     arrival_place.set("Destination")
     Dest_Airport = CTkComboBox(div_frame,width=din_frm_widget_width, 
-                            values=[
-                                    "Boston",
-                                    "Chennai",
-                                    "Thiruvananthapuram"
-                                ],
-                            variable= arrival_place, command= Combo_get_dest_val)
+                            values=major_airports,variable= arrival_place, command= Combo_get_dest_val)
+    
     Dest_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+82)
 
     arrival_place = arrival_place.get()
@@ -938,12 +934,39 @@ def PG_Get_Flight_Details():
     Search_Fligths_btn.place(x = div_frm_xpos, y =245)
     con.commit()
     Main_frm_Authentication_Btns()
+
+def PG_Settings():
+    Setting_pg = CTkToplevel(Main_fame)
+    Setting_pg.attributes("-topmost", True)
+    S_MainFrame = CTkFrame(Setting_pg, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
+    S_MainFrame.place(x = 0, y = 0)
     
 # =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
 def Main_frm_Authentication_Btns():
     if _isSignedIn == True:
-        errorLabeling(Main_fame, f"{User}", _textcolor = "#007acc", _x = m_r_width-200, _y= 10,_cooldowntime = None)
+        User_Label = CTkLabel(Main_fame, text = f"{User}", text_color= "#007acc", font= ("Bradley Hand ITC" , 18, "italic", "bold"), width = 20)
+        User_Label.place(x = m_r_width-200, y= 10)
+        User_Label.update_idletasks()
+        lbl_width = User_Label.winfo_width()
+        print(lbl_width)
+        User_Label.place(x = (m_r_width/(1.13))-(lbl_width/2),
+                                  y = 10 #(m_r_height/(2)-(form_frm_height/2))
+                                  )
+        
+
+        # Build paths inside the project like this: BASE_DIR / 'subdir'.
+        BASE_DIR = Path(__file__).resolve().parent.parent
+
+        print(BASE_DIR)
+        print(GC.fetch_current_directory())
+        img = Image.open(f"{BASE_DIR}/images/setting.png")
+        tmp_btn = CTkButton(Main_fame,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
+                            width= 10,state = "normal",
+                            command =PG_Settings)
+        
+        tmp_btn.place(x = ((m_r_width/(1.13))-(lbl_width/2)) +lbl_width+ 10, y = 10)
+        
     else:
         temp_xpos = m_r_width-300
         Sign_in_btn = CTkButton(Main_fame, text = "Sign In", command= PG_Sign_in)

@@ -507,67 +507,67 @@ major_airlines = [
     #"Singapore Airlines"
 ]
 
-# Generate combinations of airports and airlines
-combinations = []
-for airport1, airport2 in itertools.combinations(major_airports, 2):
-    for airline in major_airlines:
-        combinations.append([airport1, airport2, airline])
+# # # # Generate combinations of airports and airlines
+# # # combinations = []
+# # # for airport1, airport2 in itertools.combinations(major_airports, 2):
+# # #     for airline in major_airlines:
+# # #         combinations.append([airport1, airport2, airline])
         
 
-# Output the combinations:
+# # # # Output the combinations:
     
-with open('flights2.txt', 'w+') as file:
-    for combo in combinations:
-        file.write(f"{combo}\n")
-        print(combo)
+# # # with open('flights2.txt', 'w+') as file:
+# # #     for combo in combinations:
+# # #         file.write(f"{combo}\n")
+# # #         print(combo)
     
     
-print("Major airports written to major_airports.txt")
+# # # print("Major airports written to major_airports.txt")
 
 
 
-import pymysql
-import random
-import ast
+# # # import pymysql
+# # # import random
+# # # import ast
 
-con = pymysql.connect(
-    host = "localhost",
-    user = "root",
-    passwd  = "*password*11",
-    database = "airwaysms2_0"
-                    )
+# # # con = pymysql.connect(
+# # #     host = "localhost",
+# # #     user = "root",
+# # #     passwd  = "*password*11",
+# # #     database = "airwaysms2_0"
+# # #                     )
 
-cur = con.cursor()
+# # # cur = con.cursor()
 
-def get_price(departure, arrival, airline):
-    # Price ranges for domestic and international flights in INR
-    domestic_price_range = (1000, 5000)  # For domestic flights
-    international_price_range = (10000, 50000)  # For international flights
+# # # def get_price(departure, arrival, airline):
+# # #     # Price ranges for domestic and international flights in INR
+# # #     domestic_price_range = (1000, 5000)  # For domestic flights
+# # #     international_price_range = (10000, 50000)  # For international flights
 
-    # Simple logic to categorize flights
-    if "India" in departure and "India" in arrival:
-        # Domestic flight
-        return random.randint(*domestic_price_range)
-    else:
-        # International flight
-        return random.randint(*international_price_range)
+# # #     # Simple logic to categorize flights
+# # #     if "India" in departure and "India" in arrival:
+# # #         # Domestic flight
+# # #         return random.randint(*domestic_price_range)
+# # #     else:
+# # #         # International flight
+# # #         return random.randint(*international_price_range)
 
-# Read flights from the file and insert them into the database
-with open("flights2.txt", "r") as infile:
-    for line in infile:
-        # Convert the string representation of the list to an actual list
-        flight_data = ast.literal_eval(line.strip())
-        if len(flight_data) == 3:
-            departure, arrival, airline = flight_data
+# # # # Read flights from the file and insert them into the database
+# # # with open("flights2.txt", "r") as infile:
+# # #     for line in infile:
+# # #         # Convert the string representation of the list to an actual list
+# # #         flight_data = ast.literal_eval(line.strip())
+# # #         if len(flight_data) == 3:
+# # #             departure, arrival, airline = flight_data
             
-            # Get the price based on departure and arrival
-            price = get_price(departure, arrival, airline)
+# # #             # Get the price based on departure and arrival
+# # #             price = get_price(departure, arrival, airline)
             
-            # Insert data into the flights table
-            cur.execute("""
-                INSERT INTO flights (F_Departure, F_Ariaval, F_Airline, F_price)
-                VALUES (%s, %s, %s, %s)
-            """, (departure, arrival, airline, price))
+# # #             # Insert data into the flights table
+# # #             cur.execute("""
+# # #                 INSERT INTO flights (F_Departure, F_Ariaval, F_Airline, F_price)
+# # #                 VALUES (%s, %s, %s, %s)
+# # #             """, (departure, arrival, airline, price))
         
-            con.commit()
+# # #             con.commit()
         
