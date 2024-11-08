@@ -64,12 +64,13 @@ con = pymysql.connect(
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
 global prev_page, _isSignedIn, User, is_flight_details_obtained
-_isSignedIn = True #FALSE########################################################################################
+_isSignedIn = True #FALSE ########################################################################################
 is_flight_details_obtained = False
 User = "_Vibu_" ###############################################################################################################
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
+BASE_DIR = Path(__file__).resolve().parent.parent
 glb_clr_3 = "yellow"
 airports = [
     "Hartsfield-Jackson Atlanta International Airport (ATL)", "Beijing Capital International Airport (PEK)",
@@ -181,7 +182,7 @@ def DB_INIT_():
         cur.execute("""CREATE TABLE `flights` (
                         `F_ID` int NOT NULL AUTO_INCREMENT,
                         `F_Departure` varchar(100) DEFAULT NULL,
-                        `F_Ariaval` varchar(100) DEFAULT NULL,
+                        `F_Arrival` varchar(100) DEFAULT NULL,
                         `F_Airline` varchar(45) NOT NULL,
                         `F_price` int DEFAULT NULL,
                         PRIMARY KEY (`F_ID`)
@@ -198,12 +199,19 @@ def DB_INIT_():
                         CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
         
-        cur.execute("""CREATE TABLE IF NOT EXISTS `payment` (
-                        `PID` int DEFAULT NULL,
+        cur.execute("""CREATE TABLE `payment` (
+                        `PID` int NOT NULL AUTO_INCREMENT,
+                        `P_UID` int DEFAULT NULL,
                         `AMOUNT` int DEFAULT NULL,
-                        `P_METHOD` varchar(25) DEFAULT NULL,
-                        `P_STATUS` int DEFAULT NULL
-                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
+                        `P_STATUS` int DEFAULT NULL,
+                        `P_ACC_NUM` int DEFAULT NULL,
+                        `P_UPI_NUM` int DEFAULT NULL,
+                        `P_METHOD` varchar(45) DEFAULT NULL,
+                        PRIMARY KEY (`PID`),
+                        KEY `P_UID_idx` (`P_UID`),
+                        CONSTRAINT `P_UID` FOREIGN KEY (`P_UID`) REFERENCES `user_details` (`UID`)
+                        ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+                        """)
         
         ##### INSERT COMMANDSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS  
         def get_price(departure, arrival, airline):
@@ -936,10 +944,30 @@ def PG_Get_Flight_Details():
     Main_frm_Authentication_Btns()
 
 def PG_Settings():
-    Setting_pg = CTkToplevel(Main_fame)
-    Setting_pg.attributes("-topmost", True)
-    S_MainFrame = CTkFrame(Setting_pg, width = m_r_width, height= m_r_height-24, border_width=2, border_color= "#007acc", fg_color="transparent")
-    S_MainFrame.place(x = 0, y = 0)
+    stngFrmWidth = 200
+    stngFrmHeight = 300
+    Setting_frm = CTkFrame(Main_fame, width = stngFrmWidth, height= stngFrmHeight)
+    Setting_frm.place(x = m_r_width- 220, y = 50)
+    # for i in range(stngFrmWidth+20):
+    #     Setting_frm.grid_configure(row = m_r_width-i, column = 50)
+    #     time.sleep(0.1)
+    Setting_frm.bind("<Enter>", lambda event, btn = Setting_frm: btn.configure(border_color= "#007acc", border_width = 2))
+    Setting_frm.bind("<Leave>", lambda event, btn = Setting_frm: btn.destroy()) ###
+    
+    cancel_flights = CTkButton(Setting_frm, text= "Cancel Ticket")
+    cancel_flights.pack(padx = 25, pady = 5)
+    
+    booking_history_btn = CTkButton(Setting_frm, text= "Booking History")
+    booking_history_btn.pack(padx = 25, pady = 5)
+    
+    Edit_btn = CTkButton(Setting_frm, text= "Edit Acc")
+    Edit_btn.pack(padx = 25, pady = 5)
+    
+    img = Image.open(f"{BASE_DIR}/images/exit.png")
+    tmp_btn = CTkButton(Setting_frm,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
+                        width= 5,state = "normal", fg_color= "transparent",
+                        command =PG_Settings)
+    tmp_btn.pack(padx = 5, pady = 5)
     
 # =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
@@ -955,11 +983,6 @@ def Main_frm_Authentication_Btns():
                                   )
         
 
-        # Build paths inside the project like this: BASE_DIR / 'subdir'.
-        BASE_DIR = Path(__file__).resolve().parent.parent
-
-        print(BASE_DIR)
-        print(GC.fetch_current_directory())
         img = Image.open(f"{BASE_DIR}/images/setting.png")
         tmp_btn = CTkButton(Main_fame,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
                             width= 10,state = "normal",
