@@ -72,6 +72,7 @@ glb_clr_1 = "blue"
 glb_clr_2 = "green"
 BASE_DIR = Path(__file__).resolve().parent.parent
 glb_clr_3 = "yellow"
+destroy_after = None
 airports = [
     "Hartsfield-Jackson Atlanta International Airport (ATL)", "Beijing Capital International Airport (PEK)",
     "Los Angeles International Airport (LAX)", "Dubai International Airport (DXB)", "Tokyo Haneda Airport (HND)",
@@ -951,23 +952,57 @@ def PG_Settings():
     # for i in range(stngFrmWidth+20):
     #     Setting_frm.grid_configure(row = m_r_width-i, column = 50)
     #     time.sleep(0.1)
-    Setting_frm.bind("<Enter>", lambda event, btn = Setting_frm: btn.configure(border_color= "#007acc", border_width = 2))
-    Setting_frm.bind("<Leave>", lambda event, btn = Setting_frm: btn.destroy()) ###
+    def on_enter(event):
+        Setting_frm.configure(border_color= "#007acc", border_width = 2)
+        global destroy_after
+        if destroy_after is not None :
+            Setting_frm.after_cancel(destroy_after)
+        
+    def on_leave(event):
+        global destroy_after
+        #destroy_after = Setting_frm.after(100, check_if_outside)
+            #Setting_frm.configure(border_color= "Original color", border_width = 0)
+        if event == Setting_frm :
+            pass
+        else:
+            Setting_frm.destroy()
+        
+    def check_if_outside():
+        # if not Setting_frm.winfo_containing(Setting_frm.winfo_pointerx(), Setting_frm.winfo_pointery()):
+        #     Setting_frm.destroy()
+        pass
+        
+    Setting_frm.bind("<Enter>", on_enter) #  lambda event, btn = Setting_frm: btn.configure(border_color= "#007acc", border_width = 2)
+    Setting_frm.bind("<Leave>",lambda btn = Setting_frm: on_leave(btn)) ### lambda event, btn = Setting_frm: btn.destroy()
     
     cancel_flights = CTkButton(Setting_frm, text= "Cancel Ticket")
     cancel_flights.pack(padx = 25, pady = 5)
+    cancel_flights.bind("<Enter>", on_enter)
+    cancel_flights.bind("<Enter>", on_leave,lambda event, btn = Setting_frm.winfo_parent(): on_leave(btn))
     
     booking_history_btn = CTkButton(Setting_frm, text= "Booking History")
     booking_history_btn.pack(padx = 25, pady = 5)
+    booking_history_btn.bind("<Enter>", on_enter)
+    booking_history_btn.bind("<Enter>", on_leave)
     
     Edit_btn = CTkButton(Setting_frm, text= "Edit Acc")
     Edit_btn.pack(padx = 25, pady = 5)
+    Edit_btn.bind("<Enter>", on_enter)
+    Edit_btn.bind("<Enter>", on_leave)
+    
+    def logout():
+        global _isSignedIn, User
+        _isSignedIn = False
+        User = ""
+        PG_Get_Flight_Details()
     
     img = Image.open(f"{BASE_DIR}/images/exit.png")
-    tmp_btn = CTkButton(Setting_frm,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
+    logout_btn = CTkButton(Setting_frm,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
                         width= 5,state = "normal", fg_color= "transparent",
-                        command =PG_Settings)
-    tmp_btn.pack(padx = 5, pady = 5)
+                        command =logout)
+    logout_btn.pack(padx = 5, pady = 5)
+    logout_btn.bind("<Enter>", on_enter)
+    logout_btn.bind("<Enter>", on_leave)
     
 # =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
