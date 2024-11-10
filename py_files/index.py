@@ -2,27 +2,24 @@ import subprocess
 import smtplib
 import os
 import sys
-# KU
 
-# def install(package):
-#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-# # List of required packages
-# required_packages = ["customtkinter", 
-#                      "matplotlib", 
-#                      "pillow",
-#                      "pymysql",
-#                      "colorama",
-#                      "tkcalendar"
-#                     ]
+required_packages = ["customtkinter", 
+                     "matplotlib", 
+                     "pillow",
+                     "pymysql",
+                     "colorama",
+                     "tkcalendar"
+                    ]
 
-# # Install missing packages
-# for package in required_packages:
-#     try:
-#         __import__(package)
-#         print(f"{package} Succesfully installed.")
-#     except ImportError:
-#         install(package)
+for package in required_packages:
+    try:
+        __import__(package)
+        print(f"{package} Succesfully installed.")
+    except ImportError:
+        install(package)
 
 from customtkinter import *
 from PIL import Image
@@ -42,11 +39,11 @@ from flights import major_airports
 import random
 import ast
 from colorama import Fore
+from tkinter import filedialog
 
 m_r_width, m_r_height = SG().GetUsableScreenSize()[0], SG().GetUsableScreenSize()[1]
 
 root = CTk()
-#root.attributes("-fullscreen", True)
 root.title("http:www.HADAirlineManagementSystem.com/")
 set_appearance_mode("Dark")
 GC.centreScreen(root,root, m_r_width, m_r_height)
@@ -58,15 +55,13 @@ con = pymysql.connect(
     host = "localhost",
     user = "root",
     passwd  = "*password*11",
-    #database = "airwaysms2_0"
                     )
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
-global prev_page, _isSignedIn, User, is_flight_details_obtained
-_isSignedIn = True #FALSE ########################################################################################
+_isSignedIn = FALSE 
 is_flight_details_obtained = False
-User = "_Vibu_" ###############################################################################################################
+User = "" 
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
@@ -163,7 +158,6 @@ def DB_INIT_():
     try :
         cur.execute("CREATE DATABASE IF NOT EXISTS `airwaysms2_0` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;")
               
-                        #`FU_ID` int DEFAULT NULL,
         cur.execute("""CREATE TABLE IF NOT EXISTS `user_details` (
                         `UID` int NOT NULL AUTO_INCREMENT,
                         `UF_name` varchar(100) DEFAULT NULL,
@@ -214,41 +208,8 @@ def DB_INIT_():
                         ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
                         """)
         
-        ##### INSERT COMMANDSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS  
-        def get_price(departure, arrival, airline):
-            # Price ranges for domestic and international flights in INR
-            domestic_price_range = (1000, 5000)  # For domestic flights
-            international_price_range = (10000, 50000)  # For international flights
-
-            # Simple logic to categorize flights
-            if "India" in departure and "India" in arrival:
-                # Domestic flight
-                return random.randint(*domestic_price_range)
-            else:
-                # International flight
-                return random.randint(*international_price_range)
-
-        # Read flights from the file and insert them into the database
-        with open("flights2.txt", "r") as infile:
-            for line in infile:
-                # Convert the string representation of the list to an actual list
-                flight_data = ast.literal_eval(line.strip())
-                if len(flight_data) == 3:
-                    departure, arrival, airline = flight_data
-                    
-                    # Get the price based on departure and arrival
-                    price = get_price(departure, arrival, airline)
-                    
-                    # Insert data into the flights table
-                    cur.execute("""
-                        INSERT INTO flights (F_Departure, F_Arrival, F_Airline, F_price)
-                        VALUES (%s, %s, %s, %s)
-                    """, (departure, arrival, airline, price))
-                
-        con.commit()
-              
     except Exception as e:
-        print(f'Caught {type(e)}: e')
+        pass
         
     finally :
         print("Sucessfully Initialized Database.")
@@ -275,12 +236,25 @@ Main_fame.place(x = 0, y = 0)
 global booking
 def booking ():
     Ticket_Code = TCG.Gen_Code()
-    cur.execute("SELECT * FROM flights where F_ID ='%s'", Flight_ID)
+    cur.execute("SELECT * FROM flights WHERE F_ID ='%s'", Flight_ID)
     cur.execute("SELECT COUNT(*) FROM booking")
     F_id = cur.fetchone()[0] 
-    print(F_id)
+    global User
     cur.execute("INSERT INTO booking (BID, BU_NAME, B_FLIGHT) VALUES (%s, %s, %s)", (Ticket_Code, User, Flight_ID))
     con.commit()
+    file_path = filedialog.asksaveasfilename(defaultextension = ".txt", 
+                                             filetypes=[("Text Files", "*.txt"),
+                                              ("All Files", "*.*")
+                                              ],
+                                             initialfile= "SELECT WHERE TO SAVE THE TICKET.txt")
+    temp_qry = f"SELECT F_Departure, F_Arrival, F_Airline, F_price FROM flights WHERE flights.F_ID = %s ;"
+    cur.execute(temp_qry, (Flight_ID,))
+    result = cur.fetchone()
+    if file_path:
+        with open(file_path, "w")as f:
+            f.write(f"Ticket Id : {Ticket_Code}, User : {User}, Departure : {result[0]}, Arrival : {result[1]}\
+Airline : {result[2]}, Price : {result[3]}")
+            
     errorLabeling(form_frm, "Sucessfully Booked", _textcolor = "green", _x = 120, _y = 170)
     
 global PG_Payment
@@ -329,7 +303,7 @@ def PG_Payment():
         UPI_Number_Entry.place(x =25, y = 50)
         
         cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
-        Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
+        Amount = str(cur.fetchone()[0])
         
         Amount_LBL = CTkLabel(form_frm,text= f"Amount : {Amount}",width= Temp_Entry_Width)
         Amount_LBL.place(x =25, y = 90)
@@ -337,8 +311,7 @@ def PG_Payment():
         def _on_UPI_pay_btn_click():
             UPI_Number = UPI_Number_Entry.get()
             cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
-            Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
-            print(User)
+            Amount = str(cur.fetchone()[0])
             
             if UPI_Number == "" or Amount == "":
                 errorLabeling(form_frm, "Feilds Can Not Be Empty", _x = 90, _y = 170)
@@ -351,6 +324,7 @@ def PG_Payment():
                 tempqry = "SELECT COUNT(*) FROM payment"
                 cur.execute(tempqry)
                 p_id = int(cur.fetchone()[0])+1
+                global User
                 tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
@@ -392,7 +366,7 @@ def PG_Payment():
         NETB_Number_Entry.place(x =25, y = 50)
         
         cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
-        Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
+        Amount = str(cur.fetchone()[0])
         
         Amount_LBL = CTkLabel(form_frm,text= f"Amount : {Amount}",width= Temp_Entry_Width)
         Amount_LBL.place(x =25, y = 90)
@@ -400,8 +374,7 @@ def PG_Payment():
         def _on_NETB_pay_btn_click():
             ACC_Number = NETB_Number_Entry.get()
             cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
-            Amount = str(cur.fetchone()[0]) #Amount_Entry.get()
-            print(User)
+            Amount = str(cur.fetchone()[0]) 
             
             if ACC_Number == "" or Amount == "":
                 errorLabeling(form_frm, "Feilds Can Not Be Empty", _x = 90, _y = 170)
@@ -414,6 +387,7 @@ def PG_Payment():
                 tempqry = "SELECT COUNT(*) FROM payment"
                 cur.execute(tempqry)
                 p_id = int(cur.fetchone()[0])+1
+                global User
                 tempqry = f"SELECT UID FROM user_details WHERE U_name = '{User}'"
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
@@ -440,12 +414,9 @@ def PG_Payment():
 #=> --------Sign Up --------------------
 global PG_Sign_Up
 def PG_Sign_Up() :
-    #print("Hi")
     root.title ("http:www.HADAirlineManagementSystem.com/SignUp")
     for i in Main_fame.winfo_children():
         i.destroy()
-    #div_frame.destroy()
-    #fligt_search_result_frm.destroy()
     
     form_frm_width = 400
     form_frm_height = 600
@@ -457,7 +428,6 @@ def PG_Sign_Up() :
     def go_back():
         for i in Main_fame.winfo_children():
             i.destroy()
-        #fligt_search_result_frm.destroy()
         PG_Sign_in()
         
     def NullCheck():
@@ -479,9 +449,6 @@ def PG_Sign_Up() :
         _pass = pass_Entry.get()
         _re_pass = re_pass_Entry.get()
         phonenumber = phonnumber_Entry.get()
-        print(F_name,L_name,U_name,dob,Gmail,_pass,_re_pass,phonenumber)
-        print(_Gender)
-        
         tmp_qry =f"SELECT U_name FROM user_details WHERE U_name= '{U_name}'"
         cur.execute(tmp_qry)
         row = cur.fetchone()
@@ -496,12 +463,10 @@ def PG_Sign_Up() :
         
         else:
             cur.execute("SELECT Count(*) FROM user_details")
-            ans = cur.fetchone()  # ans will be a tuple, e.g., (5,)
+            ans = cur.fetchone() 
 
-            # Extract the count value from the tuple and add 1
             new_uid = ans[0] + 1
-
-            # Insert the new record with the new UID
+            
             tmp_qry = """
                 INSERT INTO user_details (UID, UF_name, UL_name, U_name, U_Gmail, U_phno, U_password, U_dob, U_gender, U_AGE)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -519,7 +484,6 @@ def PG_Sign_Up() :
                     global _isSignedIn, User
                     _isSignedIn = True
                     User = U_name
-                    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!--------------------------------------------
                     PG_Get_Flight_Details()
                 errorLabeling(form_frm, "Succesfully Added", _textcolor = "green", _x = 110, _y = 410)
                 fun_lbl = CTkLabel(form_frm)
@@ -539,16 +503,14 @@ def PG_Sign_Up() :
     def Func_radio_btn():
         global _Gender
         _Gender = Gender.get()
-        print(_Gender)
     global Gender
     Gender = StringVar(value = "other")
-    print(Gender.get())
     
     rd_btn_y_pos = 90
     
-    male_radio_btn = createRadioButton(form_frm, "Male","M",Gender,Func_radio_btn,25, rd_btn_y_pos)#. place(x = 10, y = 25)
+    male_radio_btn = createRadioButton(form_frm, "Male","M",Gender,Func_radio_btn,25, rd_btn_y_pos)
         
-    female_radio_btn = createRadioButton(form_frm,"Female", "F", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)#. place(x = 50, y = 25)
+    female_radio_btn = createRadioButton(form_frm,"Female", "F", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)
         
     other_radio_btn = createRadioButton(form_frm,"Other", "O", Gender,Func_radio_btn, 25+130 + 130, rd_btn_y_pos)
     global cal
@@ -586,18 +548,18 @@ def PG_Sign_Up() :
     
     def Show_pass():
         if pass_Entry.cget('show') == '*':
-            pass_Entry.configure(show='')  # Show the password
+            pass_Entry.configure(show='')
             show_btn.configure(text=" Hide ")
         else:
-            pass_Entry.configure(show='*')  # Hide the password
+            pass_Entry.configure(show='*') 
             show_btn.configure(text="Show")
             
     def Re_Show_pass():
         if re_pass_Entry.cget('show') == '*':
-            re_pass_Entry.configure(show='')  # Show the password
+            re_pass_Entry.configure(show='') 
             re_show_btn.configure(text=" Hide ")
         else:
-            re_pass_Entry.configure(show='*')  # Hide the password
+            re_pass_Entry.configure(show='*') 
             re_show_btn.configure(text="Show")
     
     pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
@@ -641,13 +603,11 @@ def PG_Sign_in():
         if _isSignedIn == True :
             for i in Main_fame.winfo_children():
                 i.destroy()
-            #fligt_search_result_frm.destroy()
             Main_frm_Authentication_Btns()
             PG_search_flight_()
         else : 
             for i in Main_fame.winfo_children():
                 i.destroy()
-            #fligt_search_result_frm.destroy()
             Main_frm_Authentication_Btns()
             PG_Get_Flight_Details()
             
@@ -660,22 +620,21 @@ def PG_Sign_in():
     def Login_authentication(_username, _pass):
         global _isSignedIn, User
         _isSignedIn = True
-        _username=  _username.get() #"vs_hari_dhejus" 
-        _pass = _pass.get()  #"Charazard101" 
+        _username=  _username.get()
+        _pass = _pass.get() 
         if (_username == "" or _pass == "" ) :
             errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
         else:
             temp_qry = f"SELECT U_name, U_Gmail, U_password FROM user_details WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
             cur.execute(temp_qry)
             qry_result = cur.fetchone()
-            print(qry_result)
             
             if qry_result == None :
                 errorLabeling(form_frm, "Username Or Password Is Incorrect", _x = 50, _y = 150)
                 
             else: 
+                global User
                 User = qry_result[0]
-                print(User)
                 _isSignedIn = True
                 if is_flight_details_obtained == True : 
                     PG_Payment()
@@ -688,10 +647,10 @@ def PG_Sign_in():
     def Show_pass():
         
         if pass_Entry.cget('show') == '*':
-            pass_Entry.configure(show='')  # Show the password
+            pass_Entry.configure(show='') 
             show_btn.configure(text=" Hide ")
         else:
-            pass_Entry.configure(show='*')  # Hide the password
+            pass_Entry.configure(show='*')
             show_btn.configure(text="Show")
             
     pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
@@ -734,7 +693,6 @@ bring in that feature.""",_textcolor = "#007acc", _cooldowntime = None)
 global PG_search_flight_
 def PG_search_flight_():
     prev_page = 2
-    print(prev_page)
     root.title ("http:www.HADAirlineManagementSystem.com/Search_flights")
     if div_frame.winfo_exists():
         for i in div_frame.winfo_children():
@@ -763,7 +721,7 @@ def PG_search_flight_():
     btns = []
     
     global radio_val, dest_airport, origin_airport
-    temp_qry = "SELECT F_Departure, F_Ariaval, F_Airline, F_price, F_ID FROM flights WHERE F_Departure = '" + origin_airport+ "' AND F_Ariaval = '" + dest_airport+ "';"
+    temp_qry = "SELECT F_Departure, F_Arrival, F_Airline, F_price, F_ID FROM flights WHERE F_Departure = '" + origin_airport+ "' AND F_Arrival = '" + dest_airport+ "';"
     cur.execute(temp_qry)
     result = cur.fetchall()
     btn_data= {}
@@ -772,20 +730,13 @@ def PG_search_flight_():
     for i in result :
         btn_data[key] = f"{i[0]} -----> {i[1]} : {i[2]} : {i[3]}"
         FLIGHT_ID_dict[key] = i[4]
-        print(i)
         key += 1
-    print(btn_data)    
 
     def on_btn_click(index):
-        print(f"{index} clicked. ")
-        print(result)
-        print(FLIGHT_ID_dict[index])
         global Flight_ID
         Flight_ID = FLIGHT_ID_dict[index]
         if _isSignedIn == True:
-            print("Signed In")
             PG_Payment()
-            pass#----------------------------------------------------------------------------------------------------------------
         else :
             PG_Sign_in()
             pass
@@ -803,7 +754,6 @@ def PG_Get_Flight_Details():
         i.destroy()
                 
     prev_page = 1
-    print(prev_page)
     temp_frm_width = 500
     temp_frm_height = 320
     div_frame = CTkFrame(Main_fame,width=temp_frm_width, height = temp_frm_height)
@@ -819,21 +769,19 @@ def PG_Get_Flight_Details():
             Dest_Date_Btn.configure(state = tk.NORMAL)
         else:
             Dest_Date_Btn.configure(state = tk.DISABLED)
-        print(radio_val)
 
     global book_a_fligt_radio_val
     book_a_fligt_radio_val = StringVar(value = "other")
     rd_btn_y_pos = 20
-    return_radio_btn = createRadioButton(div_frame,"Return","ReturnRadio",book_a_fligt_radio_val,Func_radio_btn,div_frm_xpos, rd_btn_y_pos)#. place(x = 10, y = 25)
+    return_radio_btn = createRadioButton(div_frame,"Return","ReturnRadio",book_a_fligt_radio_val,Func_radio_btn,div_frm_xpos, rd_btn_y_pos)
         
-    one_way_radio_btn = createRadioButton(div_frame,"One Way", "OnewayRadio", book_a_fligt_radio_val,Func_radio_btn, div_frm_xpos+130, rd_btn_y_pos)#. place(x = 50, y = 25)
+    one_way_radio_btn = createRadioButton(div_frame,"One Way", "OnewayRadio", book_a_fligt_radio_val,Func_radio_btn, div_frm_xpos+130, rd_btn_y_pos)
         
-    #mulicity_radio_btn = createRadioButton(div_frame, "Multicity", "MulticityRadio", book_a_fligt_radio_val,Func_radio_btn, div_frm_xpos+270, rd_btn_y_pos)#. place(x = 90, y = 25)
+    
 
     def Combo_get_origin_val(origin_combo_value):
         global origin_airport
         origin_airport = origin_combo_value
-        print(origin_airport)
         
     departure_place = StringVar(value="dep_combo_other")
     departure_place.set("Departure")
@@ -846,7 +794,6 @@ def PG_Get_Flight_Details():
     def Combo_get_dest_val(dest_combo_value):
         global dest_airport
         dest_airport = dest_combo_value
-        print(dest_airport)
 
     global arrival_place 
     arrival_place = StringVar(value="des_combo_other")
@@ -857,9 +804,6 @@ def PG_Get_Flight_Details():
     Dest_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+82)
 
     arrival_place = arrival_place.get()
-
-    passenger_Class = CTkComboBox(div_frame,width=din_frm_widget_width, values=["Passenger/Class"])
-    passenger_Class.place (x = div_frm_xpos, y = rd_btn_y_pos+114)
 
     def Dept_open_date_picker():
         
@@ -878,11 +822,10 @@ def PG_Get_Flight_Details():
         select_button.pack(pady=10)
 
     Dept_Date_Btn = CTkButton(div_frame, text="Departure Date", command=Dept_open_date_picker, corner_radius=100)
-    Dept_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+154)
+    Dept_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+114)
 
     Dept_date_label = CTkLabel(div_frame, text= "Select Date")
-    Dept_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+154)
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Dept_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+114)
     def Dest_open_date_picker():
         
         top = CTkToplevel(root)
@@ -901,26 +844,21 @@ def PG_Get_Flight_Details():
 
     
     Dest_Date_Btn = CTkButton(div_frame, text="Arrival Date", command=Dest_open_date_picker, corner_radius=100, state=tk.DISABLED)
-    Dest_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+190)
+    Dest_Date_Btn.place(x=div_frm_xpos, y =rd_btn_y_pos+147)
 
     Dest_date_label = CTkLabel(div_frame, text= "Select Date")
-    Dest_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+190)
+    Dest_date_label.place(x = div_frm_xpos+170, y = rd_btn_y_pos+147)
     
     def Null_Check():
         error_name = ""
         try :
             global radio_val, dest_airport, origin_airport
-            print(radio_val)
-            #___--------------______________________---------------------------------------
-            # origin_airport = "CHENNAI"
-            # dest_airport = "Thiruvananthapuram"
-            # Dept_selected_date = "2024-11-22"
-            # radio_val = "OnewayRadio"
-            print(dest_airport)
-            print(origin_airport)
-            print(Dept_selected_date)
+            radio_val
+            dest_airport
+            origin_airport
+            Dept_selected_date
             if radio_val == "ReturnRadio" :
-                print(Dest_selected_date)
+                Dest_selected_date
             
             if dest_airport not in globals() or origin_airport not in globals() or radio_val not in globals():
                 pass
@@ -928,7 +866,7 @@ def PG_Get_Flight_Details():
         except NameError :
             error_name = "NameError"
             error_label = CTkLabel(div_frame, text = "Feilds Cannot Be Empty", font = ("Bradley Hand ITC" , 18, "italic", "bold"), text_color = "red")
-            error_label.place(x = 140, y = 280)
+            error_label.place(x = 140, y = 238)
             def refresh():
                 error_label.destroy()
             error_label.after(3000, refresh)
@@ -940,91 +878,258 @@ def PG_Get_Flight_Details():
                 PG_search_flight_()
                 
     Search_Fligths_btn = CTkButton(div_frame, text = "Search Fligths", width = din_frm_widget_width, corner_radius=75, command=lambda :(Null_Check()))
-    Search_Fligths_btn.place(x = div_frm_xpos, y =245)
+    Search_Fligths_btn.place(x = div_frm_xpos, y =rd_btn_y_pos + 180)
     con.commit()
     Main_frm_Authentication_Btns()
-
-def PG_Settings():
-    stngFrmWidth = 200
-    stngFrmHeight = 300
-    Setting_frm = CTkFrame(Main_fame, width = stngFrmWidth, height= stngFrmHeight)
-    Setting_frm.place(x = m_r_width- 220, y = 50)
-    # for i in range(stngFrmWidth+20):
-    #     Setting_frm.grid_configure(row = m_r_width-i, column = 50)
-    #     time.sleep(0.1)
-    def on_enter(event):
-        Setting_frm.configure(border_color= "#007acc", border_width = 2)
-        global destroy_after
-        if destroy_after is not None :
-            Setting_frm.after_cancel(destroy_after)
-        
-    def on_leave(event):
-        global destroy_after
-        #destroy_after = Setting_frm.after(100, check_if_outside)
-            #Setting_frm.configure(border_color= "Original color", border_width = 0)
-        if event == Setting_frm :
-            pass
-        else:
-            Setting_frm.destroy()
-        
-    def check_if_outside():
-        # if not Setting_frm.winfo_containing(Setting_frm.winfo_pointerx(), Setting_frm.winfo_pointery()):
-        #     Setting_frm.destroy()
-        pass
-        
-    Setting_frm.bind("<Enter>", on_enter) #  lambda event, btn = Setting_frm: btn.configure(border_color= "#007acc", border_width = 2)
-    Setting_frm.bind("<Leave>",lambda btn = Setting_frm: on_leave(btn)) ### lambda event, btn = Setting_frm: btn.destroy()
-    
-    cancel_flights = CTkButton(Setting_frm, text= "Cancel Ticket")
-    cancel_flights.pack(padx = 25, pady = 5)
-    cancel_flights.bind("<Enter>", on_enter)
-    cancel_flights.bind("<Enter>", on_leave,lambda event, btn = Setting_frm.winfo_parent(): on_leave(btn))
-    
-    booking_history_btn = CTkButton(Setting_frm, text= "Booking History")
-    booking_history_btn.pack(padx = 25, pady = 5)
-    booking_history_btn.bind("<Enter>", on_enter)
-    booking_history_btn.bind("<Enter>", on_leave)
-    
-    Edit_btn = CTkButton(Setting_frm, text= "Edit Acc")
-    Edit_btn.pack(padx = 25, pady = 5)
-    Edit_btn.bind("<Enter>", on_enter)
-    Edit_btn.bind("<Enter>", on_leave)
-    
-    def logout():
-        global _isSignedIn, User
-        _isSignedIn = False
-        User = ""
-        PG_Get_Flight_Details()
-    
-    img = Image.open(f"{BASE_DIR}/images/exit.png")
-    logout_btn = CTkButton(Setting_frm,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
-                        width= 5,state = "normal", fg_color= "transparent",
-                        command =logout)
-    logout_btn.pack(padx = 5, pady = 5)
-    logout_btn.bind("<Enter>", on_enter)
-    logout_btn.bind("<Enter>", on_leave)
     
 # =>-----MAIN FRAME---------------------------------------------------------------------
 global Main_frm_Authentication_Btns
 def Main_frm_Authentication_Btns():
     if _isSignedIn == True:
+        global User
         User_Label = CTkLabel(Main_fame, text = f"{User}", text_color= "#007acc", font= ("Bradley Hand ITC" , 18, "italic", "bold"), width = 20)
         User_Label.place(x = m_r_width-200, y= 10)
         User_Label.update_idletasks()
         lbl_width = User_Label.winfo_width()
-        print(lbl_width)
-        User_Label.place(x = (m_r_width/(1.13))-(lbl_width/2),
-                                  y = 10 #(m_r_height/(2)-(form_frm_height/2))
-                                  )
-        
+        User_Label.place(x = (m_r_width/(1.2))-(lbl_width/2),y = 10)
+           
+        def on_select(option):
+            global _isSignedIn, User    
+            
+            if option ==  "Cancel Flights":
+                Setting_btn.set("Settings")
+                tmp_root = CTkToplevel(root)
+                tmp_root_width , tmp_root_height = 400, 300
+                tmp_root.geometry(f"{tmp_root_width}x{tmp_root_height}")
+                tmp_root.attributes("-topmost", True)
+                
+                temp_frame = CTkFrame(tmp_root, width= tmp_root_width, height = tmp_root_height, border_color= "#007acc", border_width= 2)
+                temp_frame.pack()
+                
+                Flight_ID_entry = CTkEntry(temp_frame, placeholder_text= "Ticket ID",width= 350)              
+                Flight_ID_entry.place(x = (tmp_root_width/(2))-(350/2),
+                                  y = (tmp_root_height/(2)-(28/2))-38)
+            
+                def Cancel_tickets():
+                    Flight_id = Flight_ID_entry.get()
+                    
+                    cur.execute("SELECT BID, BU_NAME FROM booking WHERE BID = %s AND IS_ACTIVE = 1", Flight_id)
+                    row = cur.fetchone()
+                    global User
+                    if row and row[1] == User :
+                        cur.execute("UPDATE booking SET IS_ACTIVE = 0 WHERE BID = %s AND IS_ACTIVE = 1", Flight_id)
+                        lbl = CTkLabel(temp_frame, text ="Successfully Canceled", text_color="green", font = ("Bradley Hand ITC", 18, "italic", "bold")) #errorLabeling(temp_frame, "Successfully Canceled", _textcolor = "green", _x = 110, _y = (tmp_root_height/(2)-(28/2)+38) )                            
+                        lbl.place(x = 110, y = (tmp_root_height/(2)-(28/2)+38))
+                        def w8():
+                            tmp_root.destroy()
+                            con.commit()
+                        lbl.after(3000,w8)
+                    else:
+                        errorLabeling(temp_frame, "Flight ID is Incorect", _x = 110, _y = (tmp_root_height/(2)-(28/2)+38))   
+            
+                Cancel_btn = CTkButton(temp_frame, text="Cancel Flight", width = 350 , corner_radius= 100, command= Cancel_tickets)
+                Cancel_btn.place(x = (tmp_root_width/(2))-(350/2),
+                                  y = (tmp_root_height/(2)-(28/2)))
+            
+            if option == "Booking History" :
+                Setting_btn.set("Settings")
+                tmp_root = CTkToplevel(root)
+                tmp_root_width , tmp_root_height = 900, 300
+                tmp_root.geometry(f"{tmp_root_width}x{tmp_root_height}")
+                tmp_root.attributes("-topmost", True)
+                tmp_root.resizable(False, False)
+                
+                temp_frame = CTkScrollableFrame(tmp_root, width= tmp_root_width, height = tmp_root_height, border_color= "#007acc", border_width= 2)
+                temp_frame.pack()
+                global User
+                cur.execute("SELECT BU_NAME, BID, F_Departure, F_Arrival, F_Airline, F_price FROM  booking B, flights F WHERE B.BU_NAME = %s AND B.B_FLIGHT = F.F_ID AND B.IS_ACTIVE = 1", User)
+                row = cur.fetchall()
+                for i in row :
+                    CTkLabel(temp_frame, text = i).pack(padx = 20, pady = 5, anchor = "w")
+                    
+            if option == "Edit Account" :
+                Setting_btn.set("Settings")
+                tmp_root = CTkToplevel(root)
+                tmp_root_width , tmp_root_height = 400, 600
+                tmp_root.geometry(f"{tmp_root_width}x{tmp_root_height}")
+                tmp_root.attributes("-topmost", True)
+                tmp_root.resizable(False, False)
+                
+                form_frm_width = 400
+                form_frm_height = 600
+                form_frm = CTkFrame(tmp_root, width=form_frm_width, height=form_frm_height)
+                form_frm.place(x = 0, y = 0)
+                
+                def go_back():
+                    for i in Main_fame.winfo_children():
+                        i.destroy()
+                    PG_Sign_in()
+                    
+                def NullCheck():
+                    global DOB_selected_date, cal
+                    F_name = F_name_Entry.get()
+                    L_name = L_name_Entry.get()
+                    U_name = U_name_Entry.get()
+                    _Gender = Gender.get()
+                    if "cal" in globals():
+                        dob = cal.get_date()
+                        dob_dt = datetime.strptime(dob, "%Y-%m-%d")
+                        today = datetime.today()
+                        global Age
+                        Age = today.year - dob_dt.year
+                        if (today.month, today.day) > (dob_dt.month, dob_dt.day):
+                            Age +=1
+                    else :
+                        dob = ""
+                    Gmail = gmail_Entry.get()
+                    _pass = pass_Entry.get()
+                    _re_pass = re_pass_Entry.get()
+                    phonenumber = phonnumber_Entry.get()
+                    
+                    
+                    if _pass != _re_pass:
+                        errorLabeling(form_frm, "Passwords Don't Match", _x = 110, _y = 410)
+                        
+                    if F_name != "" :
+                        cur.execute("UPDATE user_details set UF_name = %s", F_name)
+                        
+                    if L_name != "" :
+                        cur.execute("UPDATE user_details set UL_name = %s", L_name)
+                        
+                    if U_name != "" :
+                        cur.execute("UPDATE user_details set U_name = %s", U_name)
+                        
+                    if _Gender != "other"  :
+                        cur.execute("UPDATE user_details set U_gender = %s", _Gender)
+                        
+                    if phonenumber != "" :
+                        cur.execute("UPDATE user_details set U_phno = %s", phonenumber)
+                        
+                    if _pass != "" :
+                        cur.execute("UPDATE user_details set U_password = %s", _pass)
+                        
+                    if Gmail != "" :
+                        cur.execute("UPDATE user_details set U_Gmail = %s", Gmail)
+                        
+                    if dob != "" :
+                        cur.execute("UPDATE user_details set U_dob = %s", dob)
+                        cur.execute("UPDATE user_details set U_AGE = %s", Age)
+                        
+                    if F_name == "" and L_name == "" and U_name == "" and dob == "" and  Gmail == "" and _pass == "" and _re_pass == "" and phonenumber == "" and _Gender == "other" :
+                        errorLabeling(form_frm, "Feilds Cannot Be Null", _x = 110, _y = 410)
 
-        img = Image.open(f"{BASE_DIR}/images/setting.png")
-        tmp_btn = CTkButton(Main_fame,text = "", image = CTkImage(dark_image=img, light_image=img),corner_radius = 100,
-                            width= 10,state = "normal",
-                            command =PG_Settings)
-        
-        tmp_btn.place(x = ((m_r_width/(1.13))-(lbl_width/2)) +lbl_width+ 10, y = 10)
-        
+                    else :
+                        errorLabeling(form_frm, "Succesfully Updated", _textcolor = "green", _x = 110, _y = 410)
+                    con.commit() 
+                    
+                cur.execute("SELECT UF_name, UL_name, U_name, U_Gmail, U_phno, U_password, U_dob, U_gender, U_AGE FROM user_details WHERE U_name = %s", User)
+                result = cur.fetchone()
+                
+                F_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text=result[0])
+                F_name_Entry.place(x = 25, y = 10)
+                
+                L_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text=result[1])
+                L_name_Entry.place(x = 25, y = 50)
+                
+                def Func_radio_btn():
+                    global _Gender
+                    _Gender = Gender.get()
+                    
+                global Gender
+                Gender = StringVar(value = "other")
+                
+                rd_btn_y_pos = 90
+                
+                male_radio_btn = createRadioButton(form_frm, "Male","M",Gender,Func_radio_btn,25, rd_btn_y_pos)
+                    
+                female_radio_btn = createRadioButton(form_frm,"Female", "F", Gender,Func_radio_btn, 25+130, rd_btn_y_pos)
+                    
+                other_radio_btn = createRadioButton(form_frm,"Other", "O", Gender,Func_radio_btn, 25+130 + 130, rd_btn_y_pos)
+                global cal
+                
+                def DOB_open_date_picker():
+                    
+                    top = CTkToplevel(form_frm)
+                    top.title("Select a Date")
+                    top.attributes("-topmost", True)
+                    global cal
+                    cal = Calendar(top, selectmode='day', date_pattern = "yyyy-mm-dd")
+                    cal.pack(pady=10)
+                    def select_date():
+                        global DOB_selected_date
+                        DOB_selected_date = cal.get_date()
+                        DOB_Date_label.configure(text=f"Selected Date : {DOB_selected_date}")
+                        top.destroy()
+                        
+                    select_button = CTkButton(top, text="Select Date", command=select_date)
+                    select_button.pack(pady=10)
+
+                DOB_Date_Btn = CTkButton(form_frm, text="Date Of Birth", command=DOB_open_date_picker, corner_radius=100)
+                DOB_Date_Btn.place(x=25, y =rd_btn_y_pos+40)
+
+                DOB_Date_label = CTkLabel(form_frm, text= "Select Date")
+                DOB_Date_label.place(x = 25+170, y = 90+40)
+                
+                U_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text=result[2])
+                U_name_Entry.place(x = 25, y = 130+40)
+                
+                
+                gmail_Entry = CTkEntry(form_frm, width = 350, placeholder_text=result[3])
+                gmail_Entry.place(x = 25, y = 170+40)
+                
+                
+                def Show_pass():
+                    if pass_Entry.cget('show') == '*':
+                        pass_Entry.configure(show='')
+                        show_btn.configure(text=" Hide ")
+                    else:
+                        pass_Entry.configure(show='*') 
+                        show_btn.configure(text="Show")
+                        
+                def Re_Show_pass():
+                    if re_pass_Entry.cget('show') == '*':
+                        re_pass_Entry.configure(show='')
+                        re_show_btn.configure(text=" Hide ")
+                    else:
+                        re_pass_Entry.configure(show='*')  
+                        re_show_btn.configure(text="Show")
+                
+                pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Password", show = "*")
+                show_btn = CTkButton(pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=Show_pass)
+                show_btn.place(x = 304, y=0)
+                pass_Entry.place(x = 25, y = 170+80)
+                
+                re_pass_Entry = CTkEntry(form_frm, width = 350, placeholder_text="Re-Password", show = "*")
+                re_show_btn = CTkButton(re_pass_Entry, width = 22, height=28, text="Show",border_color="#565b5e",border_width=2, fg_color="transparent", command=Re_Show_pass)
+                re_show_btn.place(x = 304, y=0)
+                re_pass_Entry.place(x = 25, y = 210+80)
+                
+                phonnumber_Entry = CTkEntry(form_frm, 350, placeholder_text=result[4])
+                phonnumber_Entry.place(x = 25, y =250+80)
+                
+                Create_acc_btn = CTkButton(form_frm, width = 350, text="Alter Account", corner_radius=100, command = NullCheck)
+                Create_acc_btn.place(x = 25, y = 290+80)
+                
+                temp_frame2 = CTkFrame(form_frm, width = 100, height= 200, border_color= "light Grey", border_width= 2,fg_color= "transparent")
+                lbl = CTkLabel(temp_frame2, text="Enter The Feilds That You Want to Change",fg_color= "transparent")
+                lbl.pack()
+                def onhover(event):
+                    temp_frame2.place(x = 25, y =410+40)
+                
+                info_Btn = CTkButton(form_frm, text = "i", width= 10, height = 5, corner_radius= 100, hover= "on_hover")
+                info_Btn.place(x = 25, y = 370+40)
+                info_Btn.bind("<Enter>", onhover)
+                info_Btn.bind("<Leave>", lambda event : temp_frame2.place_forget())
+                
+            if  option == "Logout":
+                _isSignedIn = False
+                User =  ""
+                PG_Get_Flight_Details()
+                 
+        option = ["Cancel Flights", "Booking History", "Edit Account", "Logout"]
+        Setting_btn = CTkOptionMenu(Main_fame,  values= option, command= on_select)
+        Setting_btn.place(x = ((m_r_width/(1.2))-(lbl_width/2)) +lbl_width+ 10, y = 10)
+        Setting_btn.set("Settings")
     else:
         temp_xpos = m_r_width-300
         Sign_in_btn = CTkButton(Main_fame, text = "Sign In", command= PG_Sign_in)
@@ -1035,12 +1140,10 @@ def Main_frm_Authentication_Btns():
 
 Main_frm_Authentication_Btns()
 
-# PG_Payment()
 PG_Get_Flight_Details()
 
 #----------------------------------------------------------------------------------
 
-#root.resizable(True,True)
 root.mainloop()
 cur.close()
 con.commit()
