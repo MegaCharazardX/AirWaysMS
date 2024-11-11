@@ -21,21 +21,25 @@ for package in required_packages:
     except ImportError:
         install(package)
 
+# Created Modules 
+import Ticket_Code_Gen as TCG
+from Usable_screen import ScreenGeometry as SG
+from flights import major_airports
+import Global_Config as GC
+
+# Global Modules
+
 from customtkinter import *
 from PIL import Image
 from subprocess import call
-import Global_Config as GC
 import pymysql
 from tkcalendar import Calendar
-import Ticket_Code_Gen as TCG
 import tkinter as tk 
-from Usable_screen import ScreenGeometry as SG
 from pathlib import Path
 from tkcalendar import Calendar
 from datetime import datetime
 from tkinter import Toplevel
 import time 
-from flights import major_airports
 import random
 import ast
 from colorama import Fore
@@ -1019,7 +1023,12 @@ def Main_frm_Authentication_Btns():
                         errorLabeling(form_frm, "Feilds Cannot Be Null", _x = 110, _y = 410)
 
                     else :
-                        errorLabeling(form_frm, "Succesfully Updated", _textcolor = "green", _x = 110, _y = 410)
+                        lbl = CTkLabel(form_frm, text= "Succesfully Updated", text_color= "green", font=("Bradley Hand ITC" , 18, "italic", "bold"))
+                        lbl.place(x = 110, y = 410)
+                        # errorLabeling(form_frm, "Succesfully Updated", _textcolor = "green", _x = 110, _y = 410)
+                        def w8():
+                            tmp_root.destroy()
+                        lbl.after(3000, w8)
                     con.commit() 
                     
                 cur.execute("SELECT UF_name, UL_name, U_name, U_Gmail, U_phno, U_password, U_dob, U_gender, U_AGE FROM user_details WHERE U_name = %s", User)
