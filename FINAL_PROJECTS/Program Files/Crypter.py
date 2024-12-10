@@ -14,7 +14,7 @@ key = ['d', 'H', 'v', 'b', 'r', '7', 'T', 'S', 'M', 'E', 'W', 'A', 'K', 'e', 'i'
 # print(key)
 # random.shuffle(key)
 # print(key)
-class Crypter :
+class crypt :
     #ENCRYPT
     def __init__(self, _text):
         self.text = _text
@@ -61,4 +61,4 @@ class Crypter :
             return plain_text
 
 # Loading.loading(text = "Encrypting.. ")
-#print(Crypter(["fCwAJ AkA8Aki"]).decrypt())
+#print(crypt("Charazard101").encrypt())

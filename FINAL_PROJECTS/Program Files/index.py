@@ -26,23 +26,17 @@ import Ticket_Code_Gen as TCG
 from Usable_screen import ScreenGeometry as SG
 from flights import major_airports
 import Global_Config as GC
+from Crypter import crypt
 
 # Global Modules
 
 from customtkinter import *
-from PIL import Image
-from subprocess import call
 import pymysql
 from tkcalendar import Calendar
 import tkinter as tk 
 from pathlib import Path
 from tkcalendar import Calendar
 from datetime import datetime
-from tkinter import Toplevel
-import time 
-import random
-import ast
-from colorama import Fore
 from tkinter import filedialog
 
 m_r_width, m_r_height = SG().GetUsableScreenSize()[0], SG().GetUsableScreenSize()[1]
@@ -63,9 +57,10 @@ con = pymysql.connect(
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
-_isSignedIn = FALSE 
+_isSignedIn = True 
 is_flight_details_obtained = False
-User = "" 
+User = "vs_hari_dhejus" #vs_hari_dhejus
+isAdmin = True ###########
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
@@ -367,8 +362,8 @@ def PG_Sign_Up() :
         else :
             dob = ""
         Gmail = gmail_Entry.get()
-        _pass = pass_Entry.get()
-        _re_pass = re_pass_Entry.get()
+        _pass = crypt(pass_Entry.get()).encrypt()
+        _re_pass = crypt(re_pass_Entry.get()).encrypt()
         phonenumber = phonnumber_Entry.get()
         tmp_qry =f"SELECT U_name FROM user_details WHERE U_name= '{U_name}'"
         cur.execute(tmp_qry)
@@ -542,11 +537,11 @@ def PG_Sign_in():
         global _isSignedIn, User
         _isSignedIn = True
         _username=  _username.get()
-        _pass = _pass.get() 
+        _pass = crypt(_pass.get()).encrypt()
         if (_username == "" or _pass == "" ) :
             errorLabeling(form_frm, "Feilds Cannot Be Empty", _x = 90, _y = 150)
         else:
-            temp_qry = f"SELECT U_name, U_Gmail, U_password FROM user_details WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
+            temp_qry = f"SELECT U_name, U_Gmail, U_password, U_isAdmin FROM user_details WHERE U_name = '{_username}' or U_Gmail = '{_username}' and U_password = '{_pass}'"
             cur.execute(temp_qry)
             qry_result = cur.fetchone()
             
@@ -554,9 +549,10 @@ def PG_Sign_in():
                 errorLabeling(form_frm, "Username Or Password Is Incorrect", _x = 50, _y = 150)
                 
             else: 
-                global User
+                global User, isAdmin
                 User = qry_result[0]
                 _isSignedIn = True
+                isAdmin = qry_result[-1]
                 if is_flight_details_obtained == True : 
                     PG_Payment()
                 else:
@@ -815,7 +811,7 @@ def Main_frm_Authentication_Btns():
         User_Label.place(x = (m_r_width/(1.2))-(lbl_width/2),y = 10)
            
         def on_select(option):
-            global _isSignedIn, User    
+            global _isSignedIn, User , isAdmin   
             
             if option ==  "Cancel Flights":
                 Setting_btn.set("Settings")
@@ -903,8 +899,8 @@ def Main_frm_Authentication_Btns():
                     else :
                         dob = ""
                     Gmail = gmail_Entry.get()
-                    _pass = pass_Entry.get()
-                    _re_pass = re_pass_Entry.get()
+                    _pass = crypt(pass_Entry.get()).encrypt()
+                    _re_pass = crypt(re_pass_Entry.get()).encrypt()
                     phonenumber = phonnumber_Entry.get()
                     
                     
@@ -1050,9 +1046,153 @@ def Main_frm_Authentication_Btns():
             if  option == "Logout":
                 _isSignedIn = False
                 User =  ""
+                isAdmin = False
                 PG_Get_Flight_Details()
-                 
-        option = ["Cancel Flights", "Booking History", "Edit Account", "Logout"]
+                
+            if  option == "Adiministrate":
+                temp_TL = CTkToplevel(root)
+                temp_TL.title("http:www.HADAirlineManagementSystem.com/Admin")
+                temp_TL.attributes("-topmost", True)
+                temp_TL.geometry("400x300")
+                
+                def addAdmin():
+                    temp_TL.destroy()
+                    temp_TL2 = CTkToplevel(root)
+                    temp_TL2.title("http:www.HADAirlineManagementSystem.com/Admin")
+                    temp_TL2.attributes("-topmost", True)
+                    temp_TL2.geometry("400x300")
+                    
+                    def add():
+                        user = user_Entry.get()
+                        cur.execute("UPDATE user_details SET U_isAdmin = 1 WHERE U_name = %s", user)
+                        con.commit()
+                        if cur.execute("SELECT U_isAdmin from user_details WHERE U_name = %s", user)==1:
+                            label = CTkLabel(temp_TL2, text= "Successfully Updated", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
+                            label.place(x = 110, y = 178)
+                            def dest():
+                                label.destroy()
+                                temp_TL2.destroy()
+                            label.after(3000, dest)
+                        else:
+                            label = CTkLabel(temp_TL2, text= "Username Not Found Or Server Down ", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "red")
+                            label.place(x = 45, y = 178)
+                            def dest():
+                                label.destroy()
+                            label.after(3000, dest)
+                        
+                             
+                    
+                    user_Entry = CTkEntry(temp_TL2, placeholder_text= "UserName To Change As Admin", width=240)                    
+                    user_Entry.place(x = 80, y = 100)
+                    
+                    user_Entry_btn = CTkButton(temp_TL2, text= " Change", command=add)                    
+                    user_Entry_btn.place(x = 130, y = 138)
+                
+                def delAdmin():
+                    temp_TL.destroy()
+                    temp_TL2 = CTkToplevel(root)
+                    temp_TL2.title("http:www.HADAirlineManagementSystem.com/Admin")
+                    temp_TL2.attributes("-topmost", True)
+                    temp_TL2.geometry("400x300")
+                    
+                    def _del():
+                        user = user_Entry.get()
+                        cur.execute("UPDATE user_details SET U_isActive = 0 WHERE U_name = %s", user)
+                        con.commit()
+                        if cur.execute("SELECT U_isActive from user_details WHERE U_name = %s", user)==0:
+                            label = CTkLabel(temp_TL2, text= "Username Not Found Or Server Down ", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "red")
+                            label.place(x = 45, y = 178)
+                            def dest():
+                                label.destroy()
+                            label.after(3000, dest)
+                        
+                        else:
+                            label = CTkLabel(temp_TL2, text= "Successfully Deleted", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
+                            label.place(x = 110, y = 178)
+                            def dest():
+                                label.destroy()
+                                temp_TL2.destroy()
+                            label.after(3000, dest)
+                             
+                    
+                    user_Entry = CTkEntry(temp_TL2, placeholder_text= "UserName To Delete From Admin", width=240)                    
+                    user_Entry.place(x = 80, y = 100)
+                    
+                    user_Entry_btn = CTkButton(temp_TL2, text= " Change", command=_del)                    
+                    user_Entry_btn.place(x = 130, y = 138)
+                
+                def addFlights():
+                    temp_TL.destroy()
+                    temp_TL2 = CTkToplevel(root)
+                    temp_TL2.title("http:www.HADAirlineManagementSystem.com/Admin")
+                    temp_TL2.attributes("-topmost", True)
+                    temp_TL2.geometry("400x300")
+                    
+                    def _del():
+                        dept = Dept_Entry.get()
+                        arr = Arr_Entry.get()
+                        Air = Air_Entry.get()
+                        price = price_Entry.get()
+                        cur.execute("SELECT COUNT(*) FROM flights")
+                        tempCount = cur.fetchone()[0]
+                        if dept ==""or arr ==""or Air ==""or price =="":
+                            errorLabeling(temp_TL2, "Fields Cannot Be Empty", _x = 30, _y = 178)
+                        elif not price.isdigit():
+                            errorLabeling(temp_TL2, "Check The Price", _x = 30, _y = 178)
+                        else:
+                            cur.execute("INSERT INTO flights(F_Departure,F_Arrival,F_Airline, F_price ) VALUES (%s, %s,%s,%s)", (dept, arr, Air, int(price)))
+                        con.commit()
+                        if cur.execute("SELECT COUNT(*) FROM flights")!=tempCount+1:
+                            label = CTkLabel(temp_TL2, text= "Successfully Added", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
+                            label.place(x = 110, y = 178)
+                            def dest():
+                                label.destroy()
+                                temp_TL2.destroy()
+                            label.after(3000, dest)
+                        
+                        else:
+                            label = CTkLabel(temp_TL2, text= " Error Occured While Inserting ", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "red")
+                            label.place(x = 45, y = 178)
+                            def dest():
+                                label.destroy()
+                            label.after(3000, dest)
+                             
+                    tempy = 50
+                    Dept_Entry = CTkEntry(temp_TL2, placeholder_text= "Depature Place", width=240)                    
+                    Dept_Entry.place(x = 80, y = tempy)
+                    
+                    Arr_Entry = CTkEntry(temp_TL2, placeholder_text= "Arrival Place", width=240)                    
+                    Arr_Entry.place(x = 80, y = tempy+35)
+                    
+                    Air_Entry = CTkEntry(temp_TL2, placeholder_text= "Airline Name", width=240)                    
+                    Air_Entry.place(x = 80, y = tempy+35+35)
+                    
+                    price_Entry = CTkEntry(temp_TL2, placeholder_text= "Price", width=240)                    
+                    price_Entry.place(x = 80, y = tempy+35+35+35)
+                    
+                    add_Flight_btn = CTkButton(temp_TL2, text="Add", command=_del)
+                    add_Flight_btn.place(x = 125, y = tempy+35+35+35+35)
+                
+                tempx = 55
+                tempy = 150
+                Add_Admin_btn = CTkButton(temp_TL, text="Add Admin", command=addAdmin)
+                Add_Admin_btn.place(x = tempx, y = tempy-30)
+                
+                Add_Flight_btn = CTkButton(temp_TL, text="Add Flights", command=addFlights)
+                Add_Flight_btn.place(x = tempx+150, y = tempy-30)
+                    
+                Rem_Flight_btn = CTkButton(temp_TL, text="Delete Flights")
+                Rem_Flight_btn.place(x = tempx+150, y = tempy+10)
+                    
+                Rem_Admin_btn = CTkButton(temp_TL, text="Delete Admin", command=delAdmin)
+                Rem_Admin_btn.place(x = tempx, y = tempy+10)
+                
+                    
+  ######################## ADMINISTRATE    
+        if isAdmin==1:           
+            option = ["Cancel Flights", "Booking History", "Edit Account","Adiministrate", "Logout"]
+        else:
+            option = ["Cancel Flights", "Booking History", "Edit Account", "Logout"]
         Setting_btn = CTkOptionMenu(Main_fame,  values= option, command= on_select)
         Setting_btn.place(x = ((m_r_width/(1.2))-(lbl_width/2)) +lbl_width+ 10, y = 10)
         Setting_btn.set("Settings")
