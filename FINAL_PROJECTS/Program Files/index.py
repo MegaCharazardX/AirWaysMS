@@ -1,26 +1,3 @@
-import subprocess
-import smtplib
-import os
-import sys
-
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-required_packages = ["customtkinter", 
-                     "matplotlib", 
-                     "pillow",
-                     "pymysql",
-                     "colorama",
-                     "tkcalendar"
-                    ]
-
-for package in required_packages:
-    try:
-        __import__(package)
-        print(f"{package} Succesfully installed.")
-    except ImportError:
-        install(package)
-
 # Created Modules 
 import Ticket_Code_Gen as TCG
 from Usable_screen import ScreenGeometry as SG
@@ -58,7 +35,7 @@ root.geometry(f"{m_r_width}x{m_r_height}")
 con = pymysql.connect(
     host = "localhost",
     user = "root",
-    passwd  = "*password*11",
+    passwd  = "password",
                     )
 
 cur = con.cursor()
