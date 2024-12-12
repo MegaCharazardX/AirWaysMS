@@ -902,8 +902,7 @@ def Main_frm_Authentication_Btns():
                     _pass = crypt(pass_Entry.get()).encrypt()
                     _re_pass = crypt(re_pass_Entry.get()).encrypt()
                     phonenumber = phonnumber_Entry.get()
-                    
-                    
+                                        
                     if _pass != _re_pass:
                         errorLabeling(form_frm, "Passwords Don't Match", _x = 110, _y = 410)
                         
@@ -1128,7 +1127,7 @@ def Main_frm_Authentication_Btns():
                     temp_TL2.attributes("-topmost", True)
                     temp_TL2.geometry("400x300")
                     
-                    def _del():
+                    def add():
                         dept = Dept_Entry.get()
                         arr = Arr_Entry.get()
                         Air = Air_Entry.get()
@@ -1136,15 +1135,17 @@ def Main_frm_Authentication_Btns():
                         cur.execute("SELECT COUNT(*) FROM flights")
                         tempCount = cur.fetchone()[0]
                         if dept ==""or arr ==""or Air ==""or price =="":
-                            errorLabeling(temp_TL2, "Fields Cannot Be Empty", _x = 30, _y = 178)
+                            errorLabeling(temp_TL2, "Fields Cannot Be Empty", _x = 30, _y = 190+35)
                         elif not price.isdigit():
-                            errorLabeling(temp_TL2, "Check The Price", _x = 30, _y = 178)
+                           errorLabeling(temp_TL2, "Check The Price", _x = 30, _y = 190+35)
                         else:
                             cur.execute("INSERT INTO flights(F_Departure,F_Arrival,F_Airline, F_price ) VALUES (%s, %s,%s,%s)", (dept, arr, Air, int(price)))
-                        con.commit()
-                        if cur.execute("SELECT COUNT(*) FROM flights")!=tempCount+1:
+                            con.commit()
+                        cur.execute("SELECT COUNT(*) FROM flights")
+                        check_Count = cur.fetchone()[0]
+                        if check_Count ==tempCount+1:
                             label = CTkLabel(temp_TL2, text= "Successfully Added", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
-                            label.place(x = 110, y = 178)
+                            label.place(x = 110, y = 190+35)
                             def dest():
                                 label.destroy()
                                 temp_TL2.destroy()
@@ -1152,7 +1153,7 @@ def Main_frm_Authentication_Btns():
                         
                         else:
                             label = CTkLabel(temp_TL2, text= " Error Occured While Inserting ", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "red")
-                            label.place(x = 45, y = 178)
+                            label.place(x = 45, y = 190+35)
                             def dest():
                                 label.destroy()
                             label.after(3000, dest)
@@ -1170,9 +1171,135 @@ def Main_frm_Authentication_Btns():
                     price_Entry = CTkEntry(temp_TL2, placeholder_text= "Price", width=240)                    
                     price_Entry.place(x = 80, y = tempy+35+35+35)
                     
-                    add_Flight_btn = CTkButton(temp_TL2, text="Add", command=_del)
+                    add_Flight_btn = CTkButton(temp_TL2, text="Add", command=add)
                     add_Flight_btn.place(x = 125, y = tempy+35+35+35+35)
                 
+                def delflights():
+                    temp_TL.destroy()
+                    temp_TL2 = CTkToplevel(root)
+                    temp_TL2.title("http:www.HADAirlineManagementSystem.com/Admin")
+                    temp_TL2.attributes("-topmost", True)
+                    temp_TL2.geometry("760x300")
+                    
+                    def _del():
+                        flightId = FlightIDEntry.get()
+                        if flightId =="":
+                            errorLabeling(temp_TL2, "Feild Empty", _x = 345, _y = 1)
+                        elif flightId.isalpha():
+                            errorLabeling(temp_TL2, "Invalid ID", _x = 346, _y = 1)
+                        else:
+                            cur.execute("SELECT F_ID FROM flights WHERE F_IsActive = 1")    
+                            result = cur.fetchall()
+                            if (int(flightId),) not in result:
+                                errorLabeling(temp_TL2, "ID Not Found", _x = 344, _y = 1)
+                            else:
+                                cur.execute("UPDATE flights SET F_IsActive = 0 WHERE F_ID = %s", flightId)
+                                #errorLabeling(temp_TL2, "Deleted", _x = 347, _y = 1)
+                                con.commit()
+                                label = CTkLabel(temp_TL2, text= "Successfully Deleted", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
+                                label.place(x = 336, y = 1)
+                                def dest():
+                                    label.destroy()
+                                    temp_TL2.destroy()
+                                label.after(3000, dest)
+                                
+                                
+                    tempx, tempy = 10, 30
+                    FlightIDEntry = CTkEntry(temp_TL2, placeholder_text="Flight ID")
+                    FlightIDEntry.place(x = tempx+240, y = tempy)
+                    
+                    mod_btn = CTkButton(temp_TL2, text="Modify", command=_del)
+                    mod_btn.place(x = tempx+390, y = tempy)
+                    
+                    sckrlble_frame = CTkScrollableFrame(temp_TL2, width = 720, height=220)
+                    sckrlble_frame.place(x = tempx, y = tempy+35)
+                    cur.execute("SELECT * FROM Flights WHERE F_IsActive = 1")
+                    result = cur.fetchall()
+                    for i in result:
+                        lbl = CTkLabel(sckrlble_frame, text=f"{i[0]}  {i[1]}  {i[2]}  {i[3]}  {i[4]}", text_color= "Light Gray")
+                        lbl.pack(padx = 50,pady = 10, anchor = "w")
+                       
+                def ModFlights():
+                    temp_TL.destroy()
+                    temp_TL2 = CTkToplevel(root)
+                    temp_TL2.title("http:www.HADAirlineManagementSystem.com/Admin")
+                    temp_TL2.attributes("-topmost", True)
+                    temp_TL2.geometry("760x300")
+                    
+                    def mod():
+                        flightId = FlightIDEntry.get()
+                        if flightId =="":
+                            errorLabeling(temp_TL2, "Feild Empty", _x = 345, _y = 1)
+                        elif flightId.isalpha():
+                            errorLabeling(temp_TL2, "Invalid ID", _x = 346, _y = 1)
+                        else:
+                            cur.execute("SELECT F_ID FROM flights WHERE F_IsActive = 1")    
+                            result = cur.fetchall()
+                            if (int(flightId),) not in result:
+                                errorLabeling(temp_TL2, "ID Not Found", _x = 344, _y = 1)
+                            else:
+                                temp_TL2.destroy()    
+                                temp_TL3 = CTkToplevel(root)
+                                temp_TL3.title("http:www.HADAirlineManagementSystem.com/Admin")
+                                temp_TL3.attributes("-topmost", True)
+                                temp_TL3.geometry("400x300")
+                                
+                                tempx, tempy = 10 , 30
+                                cur.execute("SELECT * FROM flights WHERE F_ID = %s", flightId)
+                                result = cur.fetchone()
+                                
+                                def Check():
+                                    Dept = Dept_Entry.get()
+                                    Arr = Arr_Entry.get()
+                                    Air = Air_Entry.get()
+                                    price = price_Entry.get()
+                        
+                                    if Dept != "":   
+                                        cur.execute("UPDATE flights SET F_Departure = %s WHERE F_ID =%s", Dept) 
+                        
+                                    if Arr != "":   
+                                        cur.execute("UPDATE flights SET F_Arrival = %s WHERE F_ID =%s", Arr) 
+                        
+                                    if Air != "":   
+                                        cur.execute("UPDATE flights SET F_Airline = %s WHERE F_ID =%s", Air) 
+                        
+                                    if price != "":   
+                                        cur.execute("UPDATE flights SET F_price = %s WHERE F_ID =%s", price) 
+                                    
+                                    con.commit()      
+                                    label = CTkLabel(temp_TL3, text= "Successfully Updated", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
+                                    label.place(x = 336, y = 1)
+                                    def dest():
+                                        label.destroy()
+                                        temp_TL3.destroy()
+                                    label.after(3000, dest)   
+                                             
+                                Dept_Entry = CTkEntry(temp_TL3, placeholder_text=result[1],width = 240)
+                                Dept_Entry.pack(pady = 5)
+                                Arr_Entry = CTkEntry(temp_TL3, placeholder_text=result[2],width = 240)
+                                Arr_Entry.pack(pady = 5)
+                                Air_Entry = CTkEntry(temp_TL3, placeholder_text=result[3],width = 240)
+                                Air_Entry.pack(pady = 5)
+                                price_Entry = CTkEntry(temp_TL3, placeholder_text=result[4],width = 240)
+                                price_Entry.pack(pady = 5)
+                                Upd_BTN = CTkButton(temp_TL3, text="Update",width = 240, command=Check)
+                                Upd_BTN.pack(pady = 5)
+                    
+                    tempx, tempy = 10, 30
+                    FlightIDEntry = CTkEntry(temp_TL2, placeholder_text="Flight ID")
+                    FlightIDEntry.place(x = tempx+240, y = tempy)
+                    
+                    mod_btn = CTkButton(temp_TL2, text="Modify", command=mod)
+                    mod_btn.place(x = tempx+390, y = tempy)
+                    
+                    sckrlble_frame = CTkScrollableFrame(temp_TL2, width = 720, height=220)
+                    sckrlble_frame.place(x = tempx, y = tempy+35)
+                    cur.execute("SELECT * FROM Flights WHERE F_IsActive = 1")
+                    result = cur.fetchall()
+                    for i in result:
+                        lbl = CTkLabel(sckrlble_frame, text=f"{i[0]}  {i[1]}  {i[2]}  {i[3]}  {i[4]}", text_color= "Light Gray")
+                        lbl.pack(padx = 50,pady = 10, anchor = "w")
+                        
                 tempx = 55
                 tempy = 150
                 Add_Admin_btn = CTkButton(temp_TL, text="Add Admin", command=addAdmin)
@@ -1181,11 +1308,15 @@ def Main_frm_Authentication_Btns():
                 Add_Flight_btn = CTkButton(temp_TL, text="Add Flights", command=addFlights)
                 Add_Flight_btn.place(x = tempx+150, y = tempy-30)
                     
-                Rem_Flight_btn = CTkButton(temp_TL, text="Delete Flights")
+                Rem_Flight_btn = CTkButton(temp_TL, text="Delete Flights", command= delflights)
                 Rem_Flight_btn.place(x = tempx+150, y = tempy+10)
                     
                 Rem_Admin_btn = CTkButton(temp_TL, text="Delete Admin", command=delAdmin)
                 Rem_Admin_btn.place(x = tempx, y = tempy+10)
+                    
+                Mod_Flight_btn = CTkButton(temp_TL, text="Modify Flights", command= ModFlights)
+                Mod_Flight_btn.place(x = 130, y = tempy+50)
+                
                 
                     
   ######################## ADMINISTRATE    
