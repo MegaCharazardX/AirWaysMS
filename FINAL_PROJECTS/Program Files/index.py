@@ -1255,20 +1255,20 @@ def Main_frm_Authentication_Btns():
                                     price = price_Entry.get()
                         
                                     if Dept != "":   
-                                        cur.execute("UPDATE flights SET F_Departure = %s WHERE F_ID =%s", Dept) 
+                                        cur.execute("UPDATE flights SET F_Departure = %s WHERE F_ID =%s", (Dept,flightId)) 
                         
                                     if Arr != "":   
-                                        cur.execute("UPDATE flights SET F_Arrival = %s WHERE F_ID =%s", Arr) 
+                                        cur.execute("UPDATE flights SET F_Arrival = %s WHERE F_ID =%s", (Arr,flightId) )
                         
                                     if Air != "":   
-                                        cur.execute("UPDATE flights SET F_Airline = %s WHERE F_ID =%s", Air) 
+                                        cur.execute("UPDATE flights SET F_Airline = %s WHERE F_ID =%s", (Air,flightId) )
                         
                                     if price != "":   
-                                        cur.execute("UPDATE flights SET F_price = %s WHERE F_ID =%s", price) 
+                                        cur.execute("UPDATE flights SET F_price = %s WHERE F_ID =%s", (price,flightId)) 
                                     
                                     con.commit()      
                                     label = CTkLabel(temp_TL3, text= "Successfully Updated", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
-                                    label.place(x = 336, y = 1)
+                                    label.pack(pady = 5)
                                     def dest():
                                         label.destroy()
                                         temp_TL3.destroy()
