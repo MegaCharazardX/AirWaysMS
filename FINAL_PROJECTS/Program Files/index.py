@@ -57,10 +57,10 @@ con = pymysql.connect(
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
-_isSignedIn = True 
+_isSignedIn = False 
 is_flight_details_obtained = False
-User = "vs_hari_dhejus" #vs_hari_dhejus
-isAdmin = True ###########
+User = "" 
+isAdmin = False 
 prev_page = 0
 glb_clr_1 = "blue"
 glb_clr_2 = "green"
@@ -937,7 +937,6 @@ def Main_frm_Authentication_Btns():
                     else :
                         lbl = CTkLabel(form_frm, text= "Succesfully Updated", text_color= "green", font=("Bradley Hand ITC" , 18, "italic", "bold"))
                         lbl.place(x = 110, y = 410)
-                        # errorLabeling(form_frm, "Succesfully Updated", _textcolor = "green", _x = 110, _y = 410)
                         def w8():
                             tmp_root.destroy()
                         lbl.after(3000, w8)
@@ -1194,7 +1193,6 @@ def Main_frm_Authentication_Btns():
                                 errorLabeling(temp_TL2, "ID Not Found", _x = 344, _y = 1)
                             else:
                                 cur.execute("UPDATE flights SET F_IsActive = 0 WHERE F_ID = %s", flightId)
-                                #errorLabeling(temp_TL2, "Deleted", _x = 347, _y = 1)
                                 con.commit()
                                 label = CTkLabel(temp_TL2, text= "Successfully Deleted", font= ("Bradley Hand ITC" , 18, "italic", "bold"), text_color= "green")
                                 label.place(x = 336, y = 1)
@@ -1202,7 +1200,6 @@ def Main_frm_Authentication_Btns():
                                     label.destroy()
                                     temp_TL2.destroy()
                                 label.after(3000, dest)
-                                
                                 
                     tempx, tempy = 10, 30
                     FlightIDEntry = CTkEntry(temp_TL2, placeholder_text="Flight ID")
@@ -1317,9 +1314,6 @@ def Main_frm_Authentication_Btns():
                 Mod_Flight_btn = CTkButton(temp_TL, text="Modify Flights", command= ModFlights)
                 Mod_Flight_btn.place(x = 130, y = tempy+50)
                 
-                
-                    
-  ######################## ADMINISTRATE    
         if isAdmin==1:           
             option = ["Cancel Flights", "Booking History", "Edit Account","Adiministrate", "Logout"]
         else:
