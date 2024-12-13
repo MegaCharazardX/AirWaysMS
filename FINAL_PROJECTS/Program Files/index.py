@@ -27,6 +27,7 @@ from Usable_screen import ScreenGeometry as SG
 from flights import major_airports
 import Global_Config as GC
 from Crypter import crypt
+from Stack import stack
 
 # Global Modules
 
@@ -57,6 +58,7 @@ con = pymysql.connect(
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
+page_Stack = stack()
 _isSignedIn = False 
 is_flight_details_obtained = False
 User = "" 
@@ -91,7 +93,7 @@ def DB_INIT_():
                         UNIQUE KEY `U_name_UNIQUE` (`U_name`)
                         ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
         
-        cur.execute("""CREATE TABLE `flights` (
+        cur.execute("""CREATE TABLE IF NOT EXISTS `flights` (
                         `F_ID` int NOT NULL AUTO_INCREMENT,
                         `F_Departure` varchar(100) DEFAULT NULL,
                         `F_Arrival` varchar(100) DEFAULT NULL,
@@ -112,7 +114,7 @@ def DB_INIT_():
                         CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;""")
         
-        cur.execute("""CREATE TABLE `payment` (
+        cur.execute("""CREATE TABLE IF NOT EXISTS `payment` (
                         `PID` int NOT NULL AUTO_INCREMENT,
                         `P_UID` int DEFAULT NULL,
                         `AMOUNT` int DEFAULT NULL,
@@ -328,7 +330,6 @@ def PG_Payment():
     NetBanking_btn = CTkButton(Centre_btn_frame, text = "Net Banking", command= on_NET_btn_click)
     NetBanking_btn.place(x = 150, y = 0)
     Main_frm_Authentication_Btns()
-    
 #=> --------Sign Up --------------------
 global PG_Sign_Up
 def PG_Sign_Up() :
@@ -1367,4 +1368,4 @@ PG_Get_Flight_Details()
 
 root.mainloop()
 cur.close()
-con.commit()
+con.commit()   
