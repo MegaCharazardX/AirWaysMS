@@ -52,7 +52,7 @@ root.geometry(f"{m_r_width}x{m_r_height}")
 con = pymysql.connect(
     host = "localhost",
     user = "root",
-    passwd  = "*password*11",
+    passwd  = "password",
                     )
 
 cur = con.cursor()
@@ -73,7 +73,7 @@ global  PG_Get_Flight_Details
 def DB_INIT_():
     try :
         cur.execute("CREATE DATABASE IF NOT EXISTS `airwaysms2_0` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;")
-              
+        cur.execute("USE airwaysms2_0")      
         cur.execute("""CREATE TABLE IF NOT EXISTS `user_details` (
                         `UID` int NOT NULL AUTO_INCREMENT,
                         `UF_name` varchar(100) DEFAULT NULL,
@@ -85,6 +85,7 @@ def DB_INIT_():
                         `U_dob` date DEFAULT NULL,
                         `U_AGE` int DEFAULT NULL,
                         `U_gender` varchar(5) DEFAULT NULL,
+                        `U_isAdmin` tinyint DEFAULT '0',
                         `U_isActive` tinyint DEFAULT '1',
                         PRIMARY KEY (`UID`),
                         UNIQUE KEY `U_name_UNIQUE` (`U_name`)
@@ -96,6 +97,7 @@ def DB_INIT_():
                         `F_Arrival` varchar(100) DEFAULT NULL,
                         `F_Airline` varchar(45) NOT NULL,
                         `F_price` int DEFAULT NULL,
+                        `F_IsActive` int DEFAULT 1,
                         PRIMARY KEY (`F_ID`)
                         ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
                     """)
@@ -104,7 +106,7 @@ def DB_INIT_():
                         `BID` varchar(100) NOT NULL,
                         `BU_NAME` varchar(100) DEFAULT NULL,
                         `B_FLIGHT` int DEFAULT NULL,
-                        `IS_ACTIVE` int DEFAULT NULL,
+                        `IS_ACTIVE` int DEFAULT "1",
                         PRIMARY KEY (`BID`),
                         KEY `B_FORIEGN_KEY_idx` (`B_FLIGHT`),
                         CONSTRAINT `B_FORIEGN_KEY` FOREIGN KEY (`B_FLIGHT`) REFERENCES `flights` (`F_ID`)
@@ -125,7 +127,7 @@ def DB_INIT_():
                         """)
         
     except Exception as e:
-        pass
+        print(e)
         
     finally :
         print("Sucessfully Initialized Database.")
@@ -703,8 +705,14 @@ def PG_Get_Flight_Details():
     departure_place = StringVar(value="dep_combo_other")
     departure_place.set("Departure")
     
+    cur.execute("SELECT F_Departure AS combined_column FROM flights UNION SELECT F_Arrival AS combined_column FROM flights")
+    airports = []
+    for i in cur.fetchall():
+        for j in i :
+            airports.append(j)
+
     Origin_Airport = CTkComboBox(div_frame,width=din_frm_widget_width,
-                                values=major_airports,
+                                values=airports,
                                     variable= departure_place, command = Combo_get_origin_val)
     Origin_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+50)
 
@@ -716,7 +724,7 @@ def PG_Get_Flight_Details():
     arrival_place = StringVar(value="des_combo_other")
     arrival_place.set("Destination")
     Dest_Airport = CTkComboBox(div_frame,width=din_frm_widget_width, 
-                            values=major_airports,variable= arrival_place, command= Combo_get_dest_val)
+                            values=airports,variable= arrival_place, command= Combo_get_dest_val)
     
     Dest_Airport.place (x = div_frm_xpos, y = rd_btn_y_pos+82)
 
@@ -1054,6 +1062,7 @@ def Main_frm_Authentication_Btns():
                 temp_TL.geometry("400x300")
                 
                 def allhistory():
+                    temp_TL.destroy()
                     Setting_btn.set("Settings")
                     tmp_root = CTkToplevel(root)
                     tmp_root_width , tmp_root_height = 900, 300
