@@ -1,3 +1,26 @@
+import subprocess
+import smtplib
+import os
+import sys
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+required_packages = ["customtkinter", 
+                     "matplotlib", 
+                     "pillow",
+                     "pymysql",
+                     "colorama",
+                     "tkcalendar"
+                    ]
+
+for package in required_packages:
+    try:
+        __import__(package)
+        print(f"{package} Succesfully installed.")
+    except ImportError:
+        install(package)
+        
 # Created Modules 
 import Ticket_Code_Gen as TCG
 from Usable_screen import ScreenGeometry as SG
@@ -29,7 +52,7 @@ root.geometry(f"{m_r_width}x{m_r_height}")
 con = pymysql.connect(
     host = "localhost",
     user = "root",
-    passwd  = "password",
+    passwd  = "*password*11",
                     )
 
 cur = con.cursor()
@@ -92,8 +115,8 @@ def DB_INIT_():
                         `P_UID` int DEFAULT NULL,
                         `AMOUNT` int DEFAULT NULL,
                         `P_STATUS` int DEFAULT NULL,
-                        `P_ACC_NUM` int DEFAULT NULL,
-                        `P_UPI_NUM` int DEFAULT NULL,
+                        `P_ACC_NUM` varchar(45) DEFAULT NULL,
+                        `P_UPI_NUM` varchar(45) DEFAULT NULL,
                         `P_METHOD` varchar(45) DEFAULT NULL,
                         PRIMARY KEY (`PID`),
                         KEY `P_UID_idx` (`P_UID`),
@@ -222,7 +245,7 @@ def PG_Payment():
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
                 tempqry = "INSERT INTO payment (PID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s)"
-                cur.execute(tempqry, (p_id,Amount,400,UPI_Number, "UPI"))
+                cur.execute(tempqry, (p_id,Amount,400,crypt(str(UPI_Number)).encrypt(), "UPI"))
                 errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
                 def delayed_lbl():
                     errorLabeling(form_frm, "Booking Ticket ...", _textcolor = "green", _x = 1100, _y = 170)
@@ -285,7 +308,7 @@ def PG_Payment():
                 cur.execute(tempqry)
                 Uid = int(cur.fetchone()[0])
                 tempqry = "INSERT INTO payment (PID, AMOUNT, P_STATUS, P_UPI_NUM, P_METHOD) VALUES (%s, %s, %s, %s, %s)"
-                cur.execute(tempqry, (p_id,Amount,400,ACC_Number, "NET"))
+                cur.execute(tempqry, (p_id,Amount,400,crypt(str(ACC_Number)).encrypt(), "NET"))
                 con.commit()
                 errorLabeling(form_frm, "Payment Sucessful", _textcolor = "green", _x = 110, _y = 170)
                 def delayed_lbl():
@@ -1030,6 +1053,22 @@ def Main_frm_Authentication_Btns():
                 temp_TL.attributes("-topmost", True)
                 temp_TL.geometry("400x300")
                 
+                def allhistory():
+                    Setting_btn.set("Settings")
+                    tmp_root = CTkToplevel(root)
+                    tmp_root_width , tmp_root_height = 900, 300
+                    tmp_root.geometry(f"{tmp_root_width}x{tmp_root_height}")
+                    tmp_root.attributes("-topmost", True)
+                    tmp_root.resizable(False, False)
+                    
+                    temp_frame = CTkScrollableFrame(tmp_root, width= tmp_root_width, height = tmp_root_height, border_color= "#007acc", border_width= 2)
+                    temp_frame.pack()
+                    global User
+                    cur.execute("SELECT BID, BU_NAME, B_FLIGHT FROM  booking ")
+                    row = cur.fetchall()
+                    for i in row :
+                        CTkLabel(temp_frame, text = f"{i[0]} --> {i[1]} --> {i[2]}").pack(padx = 20, pady = 5, anchor = "w")
+                
                 def addAdmin():
                     temp_TL.destroy()
                     temp_TL2 = CTkToplevel(root)
@@ -1276,6 +1315,7 @@ def Main_frm_Authentication_Btns():
                         
                 tempx = 55
                 tempy = 150
+                
                 Add_Admin_btn = CTkButton(temp_TL, text="Add Admin", command=addAdmin)
                 Add_Admin_btn.place(x = tempx, y = tempy-30)
                 
@@ -1289,7 +1329,11 @@ def Main_frm_Authentication_Btns():
                 Rem_Admin_btn.place(x = tempx, y = tempy+10)
                     
                 Mod_Flight_btn = CTkButton(temp_TL, text="Modify Flights", command= ModFlights)
-                Mod_Flight_btn.place(x = 130, y = tempy+50)
+                Mod_Flight_btn.place(x = tempx, y = tempy+50)
+                
+                all_booking_btn = CTkButton(temp_TL, text="All History", command=allhistory)
+                all_booking_btn.place(x = tempx+150, y = tempy+50)
+                
                 
         if isAdmin==1:           
             option = ["Cancel Flights", "Booking History", "Edit Account","Adiministrate", "Logout"]
