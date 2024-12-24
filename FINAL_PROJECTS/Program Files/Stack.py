@@ -1,10 +1,9 @@
 class stack:
     def __init__(self,matrix : list = []):
         self.matrix = matrix
-        self.numOfElements = len(self.matrix)
-
-    def re_init_Len(self):
-        self.numOfElements == len(self.matrix)
+    
+    def __repr__(self) -> str:
+        return f'{self.matrix}'
     
     def Push(self,other):
         if type(other) == list:
@@ -18,8 +17,6 @@ class stack:
         else:
             return self.matrix.pop()
     
-    def __repr__(self) -> str:
-        return f'{self.matrix}'
     
 # STK = Stack()
 # while True:

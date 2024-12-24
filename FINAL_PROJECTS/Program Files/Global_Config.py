@@ -6,8 +6,6 @@ BTN_DISABLED = "disabled"
 def fetch_current_directory():
     return os.path.dirname(os.path.realpath(__file__))
 
-#print(f"{fetch_current_directory()}")
-
 def centreScreen(_master,_root,_appwidth : int, _appheight : int):
     app_width = _appwidth
     app_height = _appheight

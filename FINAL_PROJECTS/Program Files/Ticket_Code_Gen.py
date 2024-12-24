@@ -15,7 +15,6 @@ def Gen_Code():
         else :
             corrected_date = corrected_date + i
             
-    #print(corrected_date)
     corrected_date = list(corrected_date)
     yyyy =  corrected_date[0:4]
     mm =  corrected_date[4:6]
@@ -33,10 +32,8 @@ def Gen_Code():
     print(corrected_date_)
 
     sec = list(ascii_letters)
-    #print(sec)
     rand_elem = sample(sec, 8)
     rand_code = "".join(map(str,rand_elem))
-    #print(rand_code)
 
     ticket_code = corrected_date_ + rand_code
     return ticket_code
@@ -49,6 +46,4 @@ def return_date_time(millisecond = False):
         now_time = str(datetime. now()).split(".")
         return now_time[0]
     
-#print(Gen_Code())
-#print( return_date_time())
 

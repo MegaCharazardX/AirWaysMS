@@ -17,5 +17,3 @@ class ScreenGeometry :
         self.usable_height = self.working_area.bottom - self.working_area.top
         return [self.usable_width, self.usable_height]
     
-#print(f"Full Sreen Size : {scr_width}x{scr_height}")
-#print(f"Usable Sreen Size : {usable_width}x{usable_height}")

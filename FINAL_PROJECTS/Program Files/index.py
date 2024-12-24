@@ -53,12 +53,23 @@ root.geometry(f"{m_r_width}x{m_r_height}")
 con = pymysql.connect(
     host = "localhost",
     user = "root",
-    passwd  = "password",
+    passwd  = "*password*11",
                     )
 
 cur = con.cursor()
 #---------GLOBAL VARIABLES --------
-page_Stack = stack()
+Stack = stack()
+pageDict = {
+    1: "PG_Get_Flight_Details",
+    2: "PG_search_flight_",
+    3: "PG_Sign_in",
+    4: "PG_Sign_Up",
+    5: "PG_Payment",
+    6: "_on_UPI_btn_click",
+    7: "on_NET_btn_click",
+}
+global on_NET_btn_click
+global _on_UPI_btn_click
 _isSignedIn = False 
 is_flight_details_obtained = False
 User = "" 
@@ -137,6 +148,27 @@ def DB_INIT_():
 DB_INIT_()
 #--------------------- GLOBAL FUNCTIONS ---------------------------------
 
+def GoBack(PREV_PAGE = 0):
+    for i in Main_fame.winfo_children():
+        i.destroy()
+    Stack.Pop()
+    PREV_PAGE = Stack.Pop()
+    Main_frm_Authentication_Btns()
+    if PREV_PAGE == 1:
+        PG_Get_Flight_Details()
+    if PREV_PAGE == 2:
+        PG_search_flight_()
+    if PREV_PAGE == 3:
+        PG_Sign_in()
+    if PREV_PAGE == 4:
+        PG_Sign_Up()
+    if PREV_PAGE == 5:
+        PG_Payment()
+    if PREV_PAGE == 6:
+        _on_UPI_btn_click()
+    if PREV_PAGE == 7:
+        on_NET_btn_click()
+
 def createRadioButton (_frame ,_text : str , _value, _variable, _command,  _xpos : int, _ypos  : int):
     tmpRdBtn = CTkRadioButton(_frame, text = _text , value = _value, variable = _variable,width = 75, command = lambda :(_command()) )
     tmpRdBtn.place(x =_xpos, y = _ypos)
@@ -183,16 +215,16 @@ def PG_Payment():
     for i in Main_fame.winfo_children():
         i.destroy()
     
+    Stack.Push(5)
+    
     form_frm_width = 400
     form_frm_height = 210
     global form_frm
     form_frm = CTkFrame(Main_fame, width=form_frm_width, height=form_frm_height)
     form_frm.place(x = (m_r_width/(2))-(form_frm_width/2), y = (m_r_height/(2)-(form_frm_height/2)))
     
-    def go_back():
-        PG_search_flight_()
             
-    dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+    dummy_back_btn = CTkButton(Main_fame, text="Back", command = GoBack)
     dummy_back_btn.place(x =10, y = 10)
     
     Payment_Method_label = CTkLabel(form_frm, text= "Select Payment Method")
@@ -204,15 +236,17 @@ def PG_Payment():
     Centre_btn_frame.place(x = (form_frm_width/(2))-(CBF_width/2),
                                   y = (form_frm_height/(2)-(CBF_height/2)) )
     
+    global on_NET_btn_click 
+    global on_UPI_btn_click
+    
     def on_UPI_btn_click():
         root.title ("http:www.HADAirlineManagementSystem.com/Payment/UPI")
         for i in form_frm.winfo_children():
             i.destroy()
     
-        def go_back():
-            PG_Payment()
+        Stack.Push(6)
                 
-        dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+        dummy_back_btn = CTkButton(Main_fame, text="Back", command = GoBack)
         dummy_back_btn.place(x =10, y = 10)
         Temp_Entry_Width = 350
     
@@ -230,6 +264,7 @@ def PG_Payment():
         
         def _on_UPI_pay_btn_click():
             UPI_Number = UPI_Number_Entry.get()
+            
             cur.execute(f"SELECT F_Price FROM flights WHERE F_ID = '{Flight_ID}'")
             Amount = str(cur.fetchone()[0])
             
@@ -270,11 +305,11 @@ def PG_Payment():
         root.title ("http:www.HADAirlineManagementSystem.com/Payment/UPI")
         for i in form_frm.winfo_children():
             i.destroy()
+            
+        Stack.Push(7)
     
-        def go_back():
-            PG_Payment()
                 
-        dummy_back_btn = CTkButton(Main_fame, text="Back", command = go_back)
+        dummy_back_btn = CTkButton(Main_fame, text="Back", command = GoBack)
         dummy_back_btn.place(x =10, y = 10)
         
         Temp_Entry_Width = 350
@@ -337,6 +372,8 @@ def PG_Sign_Up() :
     for i in Main_fame.winfo_children():
         i.destroy()
     
+    Stack.Push(4)
+    
     form_frm_width = 400
     form_frm_height = 600
     form_frm = CTkFrame(Main_fame, width=form_frm_width, height=form_frm_height)
@@ -344,10 +381,6 @@ def PG_Sign_Up() :
                                   y = (m_r_height/(2)-(form_frm_height/2))
                                   )
     
-    def go_back():
-        for i in Main_fame.winfo_children():
-            i.destroy()
-        PG_Sign_in()
         
     def NullCheck():
         global DOB_selected_date, cal
@@ -410,7 +443,7 @@ def PG_Sign_Up() :
             else:
                 errorLabeling(form_frm, "Error Occured While Inserting Try Restarting", _x = 5, _y = 410)
                
-    dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
+    dummy_back_btn = CTkButton(Main_fame,text="Back", command = GoBack)
     dummy_back_btn.place(x =10, y = 10)
     
     F_name_Entry = CTkEntry(form_frm, width = 350, placeholder_text="First Name")
@@ -503,6 +536,10 @@ def PG_Sign_Up() :
     Dnt_hv_acc_lbl.place(x = tempxpos, y = tempypos)
     Sign_up_lbl = CTkLabel(form_frm, text="Sign In", font = ("Arial" , 12, "italic", "underline"))
     Sign_up_lbl.place(x = tempxpos + 150, y = tempypos)
+    
+    Sign_up_lbl.bind("<Button-1>", lambda event, : PG_Sign_in())
+    Sign_up_lbl.bind("<Enter>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "#007acc"))
+    Sign_up_lbl.bind("<Leave>", lambda event, lbl = Sign_up_lbl: lbl.configure(text_color = "Light Gray"))
 #=>3------Sign In Page --------------------------------------
 global PG_Sign_in
 def PG_Sign_in():
@@ -510,27 +547,16 @@ def PG_Sign_in():
     for i in Main_fame.winfo_children():
         i.destroy()
     
+    Stack.Push(3)
+    
     form_frm_width = 400
     form_frm_height = 340
     form_frm = CTkFrame(Main_fame, width=form_frm_width, height=form_frm_height)
     form_frm.place(x = (m_r_width/(2))-(form_frm_width/2),
                                   y = (m_r_height/(2)-(form_frm_height/2))
                                   )
-    
-    def go_back():
-        global _isSignedIn
-        if _isSignedIn == True :
-            for i in Main_fame.winfo_children():
-                i.destroy()
-            Main_frm_Authentication_Btns()
-            PG_search_flight_()
-        else : 
-            for i in Main_fame.winfo_children():
-                i.destroy()
-            Main_frm_Authentication_Btns()
-            PG_Get_Flight_Details()
             
-    dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
+    dummy_back_btn = CTkButton(Main_fame,text="Back", command = GoBack)
     dummy_back_btn.place(x =10, y = 10)
 
     login_lb = CTkLabel(form_frm, text = "LOGIN")
@@ -612,7 +638,8 @@ bring in that feature.""",_textcolor = "#007acc", _cooldowntime = None)
 # =>2------Show Flights details --------------------------------------
 global PG_search_flight_
 def PG_search_flight_():
-    prev_page = 2
+    
+    Stack.Push(2)
     root.title ("http:www.HADAirlineManagementSystem.com/Search_flights")
     if div_frame.winfo_exists():
         for i in div_frame.winfo_children():
@@ -629,13 +656,8 @@ def PG_search_flight_():
 
     PG_Heading = CTkLabel(fligt_search_result_frm, text = "AVAILABLE FLIGHTS")
     PG_Heading.pack(padx = 25, pady = 10, anchor = "w")
-    def go_back():
-        for i in Main_fame.winfo_children():
-            i.destroy()
-        Main_frm_Authentication_Btns()
-        PG_Get_Flight_Details()
         
-    dummy_back_btn = CTkButton(Main_fame,text="Back", command = go_back)
+    dummy_back_btn = CTkButton(Main_fame,text="Back", command = GoBack)
     dummy_back_btn.place(x =10, y = 10)
     
     btns = []
@@ -672,8 +694,8 @@ def PG_Get_Flight_Details():
     global div_frame, _isSignedIn, User    
     for i in Main_fame.winfo_children():
         i.destroy()
-                
-    prev_page = 1
+    
+    Stack.Push(1)
     temp_frm_width = 500
     temp_frm_height = 320
     div_frame = CTkFrame(Main_fame,width=temp_frm_width, height = temp_frm_height)
@@ -844,7 +866,7 @@ def Main_frm_Authentication_Btns():
                     global User
                     if row and row[1] == User :
                         cur.execute("UPDATE booking SET IS_ACTIVE = 0 WHERE BID = %s AND IS_ACTIVE = 1", Flight_id)
-                        lbl = CTkLabel(temp_frame, text ="Successfully Canceled", text_color="green", font = ("Bradley Hand ITC", 18, "italic", "bold")) #errorLabeling(temp_frame, "Successfully Canceled", _textcolor = "green", _x = 110, _y = (tmp_root_height/(2)-(28/2)+38) )                            
+                        lbl = CTkLabel(temp_frame, text ="Successfully Canceled", text_color="green", font = ("Bradley Hand ITC", 18, "italic", "bold"))
                         lbl.place(x = 110, y = (tmp_root_height/(2)-(28/2)+38))
                         def w8():
                             tmp_root.destroy()
@@ -886,10 +908,6 @@ def Main_frm_Authentication_Btns():
                 form_frm = CTkFrame(tmp_root, width=form_frm_width, height=form_frm_height)
                 form_frm.place(x = 0, y = 0)
                 
-                def go_back():
-                    for i in Main_fame.winfo_children():
-                        i.destroy()
-                    PG_Sign_in()
                     
                 def NullCheck():
                     global DOB_selected_date, cal
